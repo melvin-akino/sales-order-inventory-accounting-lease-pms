@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { HelpButton } from "@/components/HelpButton";
 import { createWorkOrder, updateWoStatus, assignTechnician, addWoNote, claimWorkOrder } from "./actions";
 import { useToast } from "@/components/ui/Toast";
 import { fmtDate, fmtDateTime } from "@/lib/utils";
@@ -169,7 +170,10 @@ export function PmsClient({ workOrders, assets, technicians, role, myTechnicianI
     <>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4 flex-wrap">
-        <h1 className="text-[18px] font-semibold flex-1">Work Orders</h1>
+        <div className="flex items-center gap-2" style={{ flex: 1 }}>
+          <h1 className="text-[18px] font-semibold">Work Orders</h1>
+          <HelpButton slug="pms" label="Help: Work Orders" />
+        </div>
         {!isTech && (
           <div className="tabs" style={{ margin: 0, border: 0 }}>
             <button className="tab" aria-selected={view === "kanban"} onClick={() => setView("kanban")}>Board</button>

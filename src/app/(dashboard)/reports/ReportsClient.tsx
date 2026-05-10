@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { ReportData, ReportType, SalesRow, ArAgingRow, InventoryRow, PoSummaryRow, PlRow } from "./page";
+import { HelpButton } from "@/components/HelpButton";
 
 const REPORT_TYPES: { value: ReportType; label: string; desc: string }[] = [
   { value: "SALES",     label: "Sales Summary",       desc: "Revenue by month, top customers" },
@@ -289,7 +290,10 @@ export function ReportsClient({ data }: { data: ReportData }) {
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 17, fontWeight: 600 }}>Report Builder</h1>
+          <div className="flex items-center gap-2">
+            <h1 style={{ fontSize: 17, fontWeight: 600 }}>Report Builder</h1>
+            <HelpButton slug="reports" label="Help: Reports" />
+          </div>
           <p style={{ fontSize: 12, color: "oklch(var(--ink-3))", marginTop: 2 }}>
             Generate, view, and export operational reports
           </p>

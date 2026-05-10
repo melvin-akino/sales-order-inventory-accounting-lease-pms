@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createLease, updateLease } from "./actions";
+import { HelpButton } from "@/components/HelpButton";
 import { useToast } from "@/components/ui/Toast";
 import { peso, fmtDate } from "@/lib/utils";
 
@@ -98,7 +99,10 @@ export function LeasesClient({ leases, customers, assets, role }: Props) {
     <>
       {canEdit && (
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-[18px] font-semibold">Equipment Leases</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[18px] font-semibold">Equipment Leases</h1>
+            <HelpButton slug="leases" label="Help: Leases" />
+          </div>
           <button className="btn btn-accent" onClick={() => setShowCreate(true)}>
             + New Lease
           </button>

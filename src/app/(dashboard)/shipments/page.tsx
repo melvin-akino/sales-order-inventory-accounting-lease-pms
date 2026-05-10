@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ShipmentsClient } from "./ShipmentsClient";
+import { HelpButton } from "@/components/HelpButton";
 
 export default async function ShipmentsPage() {
   const session = await getServerSession(authOptions);
@@ -31,7 +32,10 @@ export default async function ShipmentsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-[18px] font-semibold">Shipments</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-[18px] font-semibold">Shipments</h1>
+          <HelpButton slug="shipments" label="Help: Shipments" />
+        </div>
       </div>
       <ShipmentsClient shipments={serialized} role={role} />
     </div>

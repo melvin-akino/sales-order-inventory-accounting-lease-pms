@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { COA, COA_BY_CODE, computeTrialBalance } from "@/lib/coa";
+import { HelpButton } from "@/components/HelpButton";
 import { peso, shortPeso, fmtDate, fmtRel } from "@/lib/utils";
 import type { JeSource, InvoiceStatus, BillStatus, BirStatus } from "@prisma/client";
 import {
@@ -417,7 +418,10 @@ export function AccountingClient({ journalEntries, invoices, bills, birFilings, 
 
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-[18px] font-semibold">Accounting</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[18px] font-semibold">Accounting</h1>
+            <HelpButton slug="accounting" label="Help: Accounting" />
+          </div>
           <p className="text-[12px]" style={{ color: "oklch(var(--ink-3))" }}>
             General ledger · AR / AP · BIR compliance · {coaLength} accounts
           </p>

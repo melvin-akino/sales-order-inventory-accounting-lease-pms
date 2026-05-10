@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ReturnsClient } from "./ReturnsClient";
+import { HelpButton } from "@/components/HelpButton";
 
 export default async function ReturnsPage() {
   const session = await getServerSession(authOptions);
@@ -34,7 +35,10 @@ export default async function ReturnsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="page-title">Returns / RMA</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="page-title">Returns / RMA</h1>
+          <HelpButton slug="returns" label="Help: Returns & RMA" />
+        </div>
         <p className="page-sub">Manage return merchandise authorizations and restock or scrap decisions</p>
       </div>
       <ReturnsClient

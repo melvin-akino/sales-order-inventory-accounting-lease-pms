@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
+import { HelpButton } from "@/components/HelpButton";
 import { peso } from "@/lib/utils";
 import { createCustomer, updateCustomer } from "./actions";
 
@@ -187,7 +188,10 @@ export function CustomersClient({ customers }: { customers: CustomerRow[] }) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-5">
-        <h1 style={{ fontSize: 17, fontWeight: 600, flex: 1 }}>Customers</h1>
+        <div className="flex items-center gap-2" style={{ flex: 1 }}>
+          <h1 style={{ fontSize: 17, fontWeight: 600 }}>Customers</h1>
+          <HelpButton slug="customers-suppliers" label="Help: Customers" />
+        </div>
         <span style={{ fontSize: 12, color: "oklch(var(--ink-3))" }}>{customers.length} customers</span>
         <a href="/api/export/customers" className="btn btn-sm">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

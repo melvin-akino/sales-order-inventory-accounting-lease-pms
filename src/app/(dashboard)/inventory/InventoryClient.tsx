@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
+import { HelpButton } from "@/components/HelpButton";
 import { receiveStock, adjustStock, updateStockSettings, initStockRow } from "./actions";
 
 export interface StockRow {
@@ -322,7 +323,10 @@ export function InventoryClient({ stocks, moves, catalogItems, warehouses }: Pro
   return (
     <div>
       <div className="flex items-center gap-3 mb-5">
-        <h1 style={{ fontSize: 17, fontWeight: 600, flex: 1 }}>Inventory</h1>
+        <div className="flex items-center gap-2" style={{ flex: 1 }}>
+          <h1 style={{ fontSize: 17, fontWeight: 600 }}>Inventory</h1>
+          <HelpButton slug="inventory" label="Help: Inventory" />
+        </div>
         {lowCount > 0 && (
           <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 99, background: "oklch(0.94 0.05 25)", color: "oklch(0.40 0.12 25)", fontWeight: 600 }}>
             {lowCount} low stock

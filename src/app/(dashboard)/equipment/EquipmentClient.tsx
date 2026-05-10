@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createAsset, updateAsset } from "./actions";
+import { HelpButton } from "@/components/HelpButton";
 import { useToast } from "@/components/ui/Toast";
 import { fmtDate } from "@/lib/utils";
 import type { AssetCategory } from "@prisma/client";
@@ -210,7 +211,10 @@ export function EquipmentClient({ assets, warehouses }: Props) {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-[18px] font-semibold">Equipment</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-[18px] font-semibold">Equipment</h1>
+          <HelpButton slug="equipment" label="Help: Equipment" />
+        </div>
         <button className="btn btn-accent" onClick={openCreate}>+ New Asset</button>
       </div>
 

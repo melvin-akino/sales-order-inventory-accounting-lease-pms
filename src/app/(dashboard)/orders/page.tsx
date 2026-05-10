@@ -6,6 +6,7 @@ import { StatePill } from "@/components/ui/StatePill";
 import { peso, fmtDate } from "@/lib/utils";
 import { STATE_LABEL } from "@/types";
 import type { OrderState } from "@prisma/client";
+import { HelpButton } from "@/components/HelpButton";
 
 interface Props {
   searchParams: { state?: string };
@@ -40,7 +41,10 @@ export default async function OrdersPage({ searchParams }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-[18px] font-semibold">Sales Orders</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-[18px] font-semibold">Sales Orders</h1>
+          <HelpButton slug="sales-orders" label="Help: Sales Orders" />
+        </div>
         <div className="flex items-center gap-2">
           <a href="/api/export/orders" className="btn btn-sm">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

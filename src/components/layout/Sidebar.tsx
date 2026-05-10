@@ -29,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "reports",   label: "Reports",        href: "/reports",   icon: "bar-chart",     roles: ["FINANCE", "ADMIN"] },
   { id: "audit",     label: "Activity Log",   href: "/audit",     icon: "activity",      roles: ["FINANCE", "ADMIN"] },
   { id: "settings",  label: "Settings",       href: "/settings",  icon: "settings",      roles: ["ADMIN"] },
+  { id: "help",      label: "Help Center",    href: "/help",      icon: "help-circle",   roles: ["AGENT", "FINANCE", "WAREHOUSE", "TECHNICIAN", "DRIVER", "ADMIN", "CUSTOMER"] },
 ];
 
 const ICON_PATHS: Record<string, string> = {
@@ -52,6 +53,7 @@ const ICON_PATHS: Record<string, string> = {
   "file-plus":     "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 18v-6M9 15h6",
   "rotate-ccw":    "M1 4v6h6M3.51 15a9 9 0 1 0 .49-4.95",
   "activity":      "M22 12h-4l-3 9L9 3l-3 9H2",
+  "help-circle":   "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01",
   "log-out":       "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
 };
 

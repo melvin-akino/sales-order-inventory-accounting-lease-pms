@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { QuotesClient } from "./QuotesClient";
+import { HelpButton } from "@/components/HelpButton";
 
 export default async function QuotesPage() {
   const session = await getServerSession(authOptions);
@@ -32,7 +33,10 @@ export default async function QuotesPage() {
     <div className="flex flex-col gap-4">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h1 className="page-title">Quotations</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="page-title">Quotations</h1>
+            <HelpButton slug="quotations" label="Help: Quotations" />
+          </div>
           <p className="page-sub">Create proforma invoices and convert to sales orders</p>
         </div>
       </div>
