@@ -17,7 +17,7 @@ export default async function SettingsPage() {
       },
     }),
     prisma.customer.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.technician.findMany({ select: { id: true, name: true }, where: { active: true }, orderBy: { name: "asc" } }),
+    prisma.technician.findMany({ select: { id: true, name: true, specialization: true, active: true, createdAt: true }, orderBy: { name: "asc" } }),
   ]);
 
   const serialized = users.map(u => ({
@@ -36,8 +36,15 @@ export default async function SettingsPage() {
   return (
     <SettingsClient
       users={serialized}
-      customers={customers}
-      technicians={technicians}
+      customers={customers.map(c => ({ id: c.id, name: c.name }))}
+      technicians={technicians.map(t => ({ id: t.id, name: t.name }))}
+      allTechnicians={technicians.map(t => ({
+        id: t.id,
+        name: t.name,
+        specialization: t.specialization,
+        active: t.active,
+        createdAt: t.createdAt.toISOString(),
+      }))}
       currentUserId={session.user.id}
     />
   );

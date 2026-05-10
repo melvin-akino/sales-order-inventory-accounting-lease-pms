@@ -12,6 +12,8 @@ interface StockAlert { name: string; warehouse: string; onHand: number; reorderA
 interface WoRow { id: string; title: string; status: string; priority: string; assetName: string; serialNumber: string; dueDate: string | null }
 interface ShipmentRow { id: string; orderId: string; customerName: string; trackingNumber: string | null; eta: string | null; total: number }
 
+interface MonthlyPoint { month: string; revenue: number; orders: number }
+
 interface Props {
   role: Role;
   // finance / admin
@@ -21,6 +23,7 @@ interface Props {
   trialBalance?: Record<string, number>;
   recentJe?: JeRow[];
   overdueInvoices?: { id: string; customerName: string; amount: number; due: string }[];
+  monthlyTrend?: MonthlyPoint[];
   // orders
   orderPipeline?: { state: string; count: number }[];
   recentOrders?: OrderRow[];
@@ -120,8 +123,50 @@ function RecentOrdersTable({ orders, title = "Recent orders" }: { orders: OrderR
   );
 }
 
+// ── Revenue trend SVG chart ───────────────────────────────────────────────────
+function RevenueTrendChart({ data }: { data: MonthlyPoint[] }) {
+  if (!data || data.length === 0) return (
+    <div style={{ display: "grid", placeItems: "center", height: 120, color: "oklch(var(--ink-3))", fontSize: 12.5 }}>No data yet</div>
+  );
+
+  const W = 400, H = 120, PAD_L = 8, PAD_R = 8, PAD_T = 12, PAD_B = 28;
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+  const max = Math.max(...data.map(d => d.revenue), 1);
+  const step = innerW / Math.max(data.length - 1, 1);
+
+  function x(i: number) { return PAD_L + i * step; }
+  function y(val: number) { return PAD_T + innerH - (val / max) * innerH; }
+
+  const pts = data.map((d, i) => `${x(i)},${y(d.revenue)}`).join(" ");
+  const fillPts = `${x(0)},${H - PAD_B} ${pts} ${x(data.length - 1)},${H - PAD_B}`;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 120, overflow: "visible" }}>
+      {/* Area fill */}
+      <polygon points={fillPts} fill="oklch(var(--accent) / 0.08)" />
+      {/* Line */}
+      <polyline points={pts} fill="none" stroke="oklch(var(--accent))" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      {/* Dots + labels */}
+      {data.map((d, i) => (
+        <g key={i}>
+          <circle cx={x(i)} cy={y(d.revenue)} r={3.5} fill="oklch(var(--accent))" />
+          {d.revenue > 0 && (
+            <text x={x(i)} y={y(d.revenue) - 6} textAnchor="middle" fontSize="9" fill="oklch(var(--ink-2))">
+              {d.revenue >= 1e6 ? (d.revenue / 1e6).toFixed(1) + "M" : d.revenue >= 1e3 ? Math.round(d.revenue / 1e3) + "K" : Math.round(d.revenue).toString()}
+            </text>
+          )}
+          <text x={x(i)} y={H - PAD_B + 14} textAnchor="middle" fontSize="9" fill="oklch(var(--ink-3))">
+            {d.month}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 // ── ADMIN view ────────────────────────────────────────────────────────────────
-function AdminDashboard({ orderPipeline=[], ar, ap, birDue=0, lowStockCount=0, lowStockItems=[], trialBalance:tb={}, recentOrders=[], recentJe=[] }: Props) {
+function AdminDashboard({ orderPipeline=[], ar, ap, birDue=0, lowStockCount=0, lowStockItems=[], trialBalance:tb={}, recentOrders=[], recentJe=[], monthlyTrend=[] }: Props) {
   const cash = (tb["1000"]??0)+(tb["1010"]??0)+(tb["1020"]??0);
   const revenue = Math.abs((tb["4000"]??0)+(tb["4100"]??0)+(tb["4200"]??0));
   const expenses = (tb["5000"]??0)+(tb["5100"]??0)+(tb["5200"]??0)+(tb["5300"]??0)+(tb["5400"]??0)+(tb["5500"]??0)+(tb["5600"]??0)+(tb["5700"]??0);
@@ -152,19 +197,17 @@ function AdminDashboard({ orderPipeline=[], ar, ap, birDue=0, lowStockCount=0, l
           <div style={{ padding:"10px 16px", borderTop:"1px solid oklch(var(--line))" }}><Link href="/orders" className="btn btn-sm w-full" style={{ justifyContent:"center" }}>View all orders →</Link></div>
         </div>
         <div className="card">
-          <div className="card-head"><span className="card-h">Revenue vs expenses · YTD</span></div>
-          <div className="card-body">
-            <div style={{ marginBottom:10 }}>
-              <div className="flex justify-between mb-1"><span style={{ fontSize:13 }}>Revenue</span><span style={{ fontSize:13, fontWeight:600, fontFamily:"monospace" }}>{shortPeso(revenue)}</span></div>
-              <div className="pl-bar-track"><div className="pl-bar-fill" style={{ width:"100%", background:"oklch(0.55 0.13 145)" }}/></div>
-            </div>
-            <div style={{ marginBottom:10 }}>
-              <div className="flex justify-between mb-1"><span style={{ fontSize:13 }}>Expenses</span><span style={{ fontSize:13, fontWeight:600, fontFamily:"monospace" }}>{shortPeso(expenses)}</span></div>
-              <div className="pl-bar-track"><div className="pl-bar-fill" style={{ width:`${revenue>0?(expenses/revenue)*100:0}%`, background:"oklch(0.55 0.14 25)" }}/></div>
-            </div>
-            <div style={{ borderTop:"1.5px solid oklch(var(--ink))", paddingTop:10 }}>
-              <div className="flex justify-between"><span style={{ fontSize:13, fontWeight:600 }}>Net income</span><span style={{ fontSize:15, fontWeight:700, fontFamily:"monospace", color:netIncome>=0?"oklch(0.45 0.13 145)":"oklch(0.45 0.14 25)" }}>{shortPeso(netIncome)}</span></div>
-            </div>
+          <div className="card-head">
+            <span className="card-h">Revenue trend · last 6 months</span>
+            <span style={{ marginLeft:"auto", fontSize:12, color:"oklch(var(--ink-3))" }}>{shortPeso(revenue)} YTD</span>
+          </div>
+          <div style={{ padding:"8px 16px" }}>
+            <RevenueTrendChart data={monthlyTrend} />
+          </div>
+          <div style={{ padding:"8px 16px 0", borderTop:"1px solid oklch(var(--line))", display:"flex", gap:24 }}>
+            <div><div style={{ fontSize:11, color:"oklch(var(--ink-3))" }}>Revenue YTD</div><div style={{ fontSize:14, fontWeight:600, color:"oklch(0.45 0.13 145)" }}>{shortPeso(revenue)}</div></div>
+            <div><div style={{ fontSize:11, color:"oklch(var(--ink-3))" }}>Expenses YTD</div><div style={{ fontSize:14, fontWeight:600, color:"oklch(0.45 0.12 25)" }}>{shortPeso(expenses)}</div></div>
+            <div><div style={{ fontSize:11, color:"oklch(var(--ink-3))" }}>Net income</div><div style={{ fontSize:14, fontWeight:600, color:netIncome>=0?"oklch(0.45 0.13 145)":"oklch(0.45 0.14 25)" }}>{shortPeso(netIncome)}</div></div>
           </div>
           <div style={{ padding:"10px 16px", borderTop:"1px solid oklch(var(--line))" }}><Link href="/ledger" className="btn btn-sm w-full" style={{ justifyContent:"center" }}>Full accounting →</Link></div>
         </div>

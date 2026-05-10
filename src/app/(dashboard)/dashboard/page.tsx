@@ -17,7 +17,12 @@ export default async function DashboardPage() {
 
   // ── ADMIN: full view ──────────────────────────────────────────────────────
   if (role === "ADMIN") {
-    const [orderCounts, invoiceSummary, billSummary, stockAlerts, birDue, recentOrders, recentJe, allJeLines] =
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const [orderCounts, invoiceSummary, billSummary, stockAlerts, birDue, recentOrders, recentJe, allJeLines, recentOrdersTrend] =
       await Promise.all([
         prisma.order.groupBy({ by: ["state"], _count: { state: true } }),
         prisma.invoice.findMany({ where: { status: { not: "PAID" } }, select: { amount: true, paid: true, status: true } }),
@@ -27,6 +32,7 @@ export default async function DashboardPage() {
         prisma.order.findMany({ take: 6, orderBy: { createdAt: "desc" }, select: { id: true, state: true, total: true, createdAt: true, customer: { select: { name: true } } } }),
         prisma.journalEntry.findMany({ take: 6, orderBy: { date: "desc" }, select: { id: true, date: true, source: true, memo: true, lines: { select: { dr: true } } } }),
         prisma.journalLine.findMany({ select: { code: true, dr: true, cr: true } }),
+        prisma.order.findMany({ where: { createdAt: { gte: sixMonthsAgo } }, select: { total: true, createdAt: true } }),
       ]);
 
     const tb = computeTrialBalance(allJeLines.map(l => ({ code: l.code, dr: Number(l.dr), cr: Number(l.cr) })));
@@ -35,6 +41,19 @@ export default async function DashboardPage() {
     const apOpen = billSummary.reduce((s, b) => s + Number(b.amount) - Number(b.paid), 0);
     const apOverdue = billSummary.filter(b => b.status === "OVERDUE").reduce((s, b) => s + Number(b.amount) - Number(b.paid), 0);
     const lowStock = stockAlerts.filter(s => s.onHand <= (s.reorderAt ?? 0));
+
+    // Build last 6 months trend
+    const monthlyTrend = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (5 - i));
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleString("en-PH", { month: "short" });
+      const pts = recentOrdersTrend.filter(o => {
+        const od = new Date(o.createdAt);
+        return `${od.getFullYear()}-${String(od.getMonth() + 1).padStart(2, "0")}` === key;
+      });
+      return { month: label, revenue: pts.reduce((s, o) => s + Number(o.total), 0), orders: pts.length };
+    });
 
     return (
       <DashboardClient
@@ -50,6 +69,7 @@ export default async function DashboardPage() {
         trialBalance={tb}
         recentOrders={recentOrders.map(o => ({ id: o.id, state: o.state, customerName: o.customer.name, total: Number(o.total), createdAt: o.createdAt.toISOString() }))}
         recentJe={recentJe.map(j => ({ id: j.id, date: j.date.toISOString(), source: j.source, memo: j.memo, amount: j.lines.reduce((s, l) => s + Number(l.dr), 0) }))}
+        monthlyTrend={monthlyTrend}
       />
     );
   }

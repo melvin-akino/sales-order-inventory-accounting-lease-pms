@@ -79,6 +79,38 @@ export async function updateUser(input: z.infer<typeof UpdateUserSchema>) {
   revalidatePath("/settings");
 }
 
+// ── Technician CRUD ───────────────────────────────────────────────────────────
+export async function createTechnician(input: { name: string; specialization?: string }) {
+  await requireAdmin();
+  const data = z.object({
+    name: z.string().min(1),
+    specialization: z.string().optional(),
+  }).parse(input);
+
+  await prisma.technician.create({
+    data: { name: data.name, specialization: data.specialization ?? null },
+  });
+
+  revalidatePath("/settings");
+}
+
+export async function updateTechnician(input: { id: string; name: string; specialization?: string; active: boolean }) {
+  await requireAdmin();
+  const data = z.object({
+    id: z.string(),
+    name: z.string().min(1),
+    specialization: z.string().optional(),
+    active: z.boolean(),
+  }).parse(input);
+
+  await prisma.technician.update({
+    where: { id: data.id },
+    data: { name: data.name, specialization: data.specialization ?? null, active: data.active },
+  });
+
+  revalidatePath("/settings");
+}
+
 // ── Reset password ────────────────────────────────────────────────────────────
 export async function resetPassword(userId: string, newPassword: string) {
   await requireAdmin();

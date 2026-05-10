@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme, type Theme } from "@/components/ThemeProvider";
-import { createUser, updateUser, resetPassword } from "./actions";
+import { createUser, updateUser, resetPassword, createTechnician, updateTechnician } from "./actions";
 import type { Role } from "@prisma/client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -23,10 +23,19 @@ interface UserRow {
 interface Customer { id: string; name: string }
 interface Technician { id: string; name: string }
 
+interface TechRow {
+  id: string;
+  name: string;
+  specialization: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
 interface Props {
   users: UserRow[];
   customers: Customer[];
   technicians: Technician[];
+  allTechnicians: TechRow[];
   currentUserId: string;
 }
 
@@ -507,9 +516,114 @@ function UsersTab({ users, customers, technicians, currentUserId }: {
   );
 }
 
+// ── Technician modals ─────────────────────────────────────────────────────────
+function TechCreateModal({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [name, setName] = useState("");
+  const [spec, setSpec] = useState("");
+  const [err, setErr] = useState("");
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault(); setErr("");
+    start(async () => {
+      try { await createTechnician({ name, specialization: spec || undefined }); router.refresh(); onClose(); }
+      catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); }
+    });
+  }
+
+  return (
+    <ModalBox title="Add Technician" onClose={onClose}>
+      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div><label className="field-label">Full Name *</label><input className="field-input" value={name} onChange={e => setName(e.target.value)} placeholder="Juan dela Cruz" required /></div>
+        <div><label className="field-label">Specialization</label><input className="field-input" value={spec} onChange={e => setSpec(e.target.value)} placeholder="Biomedical Engineering, Ventilators…" /></div>
+        {err && <p style={{ color: "oklch(var(--err))", fontSize: 12.5 }}>{err}</p>}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={pending || !name}>{pending ? "Saving…" : "Add Technician"}</button>
+        </div>
+      </form>
+    </ModalBox>
+  );
+}
+
+function TechEditModal({ tech, onClose }: { tech: TechRow; onClose: () => void }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [name, setName] = useState(tech.name);
+  const [spec, setSpec] = useState(tech.specialization ?? "");
+  const [active, setActive] = useState(tech.active);
+  const [err, setErr] = useState("");
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault(); setErr("");
+    start(async () => {
+      try { await updateTechnician({ id: tech.id, name, specialization: spec || undefined, active }); router.refresh(); onClose(); }
+      catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); }
+    });
+  }
+
+  return (
+    <ModalBox title={`Edit — ${tech.name}`} onClose={onClose}>
+      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div><label className="field-label">Full Name *</label><input className="field-input" value={name} onChange={e => setName(e.target.value)} required /></div>
+        <div><label className="field-label">Specialization</label><input className="field-input" value={spec} onChange={e => setSpec(e.target.value)} /></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <input type="checkbox" id="tech-active" checked={active} onChange={e => setActive(e.target.checked)} style={{ width: 15, height: 15, accentColor: "oklch(var(--accent))" }} />
+          <label htmlFor="tech-active" style={{ fontSize: 13, cursor: "pointer" }}>Active</label>
+        </div>
+        {err && <p style={{ color: "oklch(var(--err))", fontSize: 12.5 }}>{err}</p>}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={pending}>{pending ? "Saving…" : "Save Changes"}</button>
+        </div>
+      </form>
+    </ModalBox>
+  );
+}
+
+function TechniciansTab({ technicians }: { technicians: TechRow[] }) {
+  const [modal, setModal] = useState<null | "create" | TechRow>(null);
+
+  return (
+    <>
+      <div className="filters">
+        <span style={{ fontSize: 13, color: "oklch(var(--ink-2))" }}>{technicians.length} technician{technicians.length !== 1 ? "s" : ""}</span>
+        <div style={{ marginLeft: "auto" }}>
+          <button className="btn btn-primary" onClick={() => setModal("create")}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Add Technician
+          </button>
+        </div>
+      </div>
+      <div className="tbl-wrap">
+        <table className="tbl">
+          <thead><tr><th>Name</th><th>Specialization</th><th>Status</th><th>Added</th><th></th></tr></thead>
+          <tbody>
+            {technicians.length === 0 && (
+              <tr><td colSpan={5} style={{ textAlign: "center", padding: "24px 0", color: "oklch(var(--ink-3))" }}>No technicians yet</td></tr>
+            )}
+            {technicians.map(t => (
+              <tr key={t.id} style={{ cursor: "default", opacity: t.active ? 1 : 0.55 }}>
+                <td style={{ fontWeight: 500 }}>{t.name}</td>
+                <td className="dim" style={{ fontSize: 12.5 }}>{t.specialization ?? "—"}</td>
+                <td><span className={`pill ${t.active ? "pill-DELIVERED" : "pill-CANCELLED"}`}>{t.active ? "Active" : "Inactive"}</span></td>
+                <td className="dim" style={{ fontSize: 12 }}>{new Date(t.createdAt).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}</td>
+                <td style={{ textAlign: "right" }}><button className="btn btn-ghost btn-sm" onClick={() => setModal(t)}>Edit</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {modal === "create" && <TechCreateModal onClose={() => setModal(null)} />}
+      {modal && modal !== "create" && <TechEditModal tech={modal as TechRow} onClose={() => setModal(null)} />}
+    </>
+  );
+}
+
 // ── Main SettingsClient ───────────────────────────────────────────────────────
-export function SettingsClient({ users, customers, technicians, currentUserId }: Props) {
-  const [tab, setTab] = useState<"users" | "appearance">("users");
+export function SettingsClient({ users, customers, technicians, allTechnicians, currentUserId }: Props) {
+  const [tab, setTab] = useState<"users" | "technicians" | "appearance">("users");
 
   return (
     <div>
@@ -522,6 +636,10 @@ export function SettingsClient({ users, customers, technicians, currentUserId }:
         <button className="tab" aria-selected={tab === "users"} onClick={() => setTab("users")}>
           Users
           <span className="tab-count">{users.length}</span>
+        </button>
+        <button className="tab" aria-selected={tab === "technicians"} onClick={() => setTab("technicians")}>
+          Technicians
+          <span className="tab-count">{allTechnicians.length}</span>
         </button>
         <button className="tab" aria-selected={tab === "appearance"} onClick={() => setTab("appearance")}>
           Appearance
@@ -536,6 +654,7 @@ export function SettingsClient({ users, customers, technicians, currentUserId }:
           currentUserId={currentUserId}
         />
       )}
+      {tab === "technicians" && <TechniciansTab technicians={allTechnicians} />}
       {tab === "appearance" && <AppearanceTab />}
     </div>
   );
