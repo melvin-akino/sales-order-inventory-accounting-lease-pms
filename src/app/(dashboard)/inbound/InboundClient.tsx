@@ -200,7 +200,13 @@ function DetailDrawer({ po, onClose, onReceive, onDelay }: {
             <span className="card-h" style={{ fontFamily: "var(--font-geist-mono, ui-monospace)", fontSize: 14 }}>{po.id}</span>
             <span style={{ marginLeft: 10 }}><span className={`pill ${STATUS_PILL[po.status]}`}>{po.status}</span></span>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <a href={`/print/po/${po.id}`} target="_blank" className="btn btn-ghost btn-sm" title="Print PO">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Print PO
+            </a>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+          </div>
         </div>
         <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto" }}>
           <div className="dl">
