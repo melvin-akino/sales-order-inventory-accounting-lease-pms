@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Modal } from "@/components/ui/Modal";
 import { HelpButton } from "@/components/HelpButton";
 import { peso } from "@/lib/utils";
@@ -242,7 +243,12 @@ export function CustomersClient({ customers }: { customers: CustomerRow[] }) {
                 <td className="num">{peso(c.creditLimit)}</td>
                 <td className="dim" style={{ fontSize: 12 }}>{c.contactEmail ?? c.contactPhone ?? "—"}</td>
                 <td style={{ textAlign: "right" }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => openEdit(c)}>Edit</button>
+                  <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                    <Link href={`/print/statement/${c.id}`} target="_blank" className="btn btn-ghost btn-sm" title="Statement of Account">
+                      Statement
+                    </Link>
+                    <button className="btn btn-ghost btn-sm" onClick={() => openEdit(c)}>Edit</button>
+                  </div>
                 </td>
               </tr>
             ))}

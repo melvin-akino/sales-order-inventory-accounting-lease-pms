@@ -57,28 +57,42 @@ async function releaseReservation(orderId: string, warehouseId: string) {
 
 async function consumeStock(orderId: string, warehouseId: string, actorId: string) {
   const lines = await prisma.orderLine.findMany({ where: { orderId } });
-  await Promise.all(
-    lines.map(async line => {
-      await prisma.stock.updateMany({
-        where: { skuId: line.skuId, warehouseId },
-        data: {
-          onHand: { decrement: line.qty },
-          reserved: { decrement: line.qty },
-        },
+  for (const line of lines) {
+    // Decrement stock row
+    await prisma.stock.updateMany({
+      where: { skuId: line.skuId, warehouseId },
+      data: {
+        onHand: { decrement: line.qty },
+        reserved: { decrement: line.qty },
+      },
+    });
+    await prisma.stockMove.create({
+      data: {
+        skuId: line.skuId,
+        warehouseId,
+        type: "PICK",
+        qty: -line.qty,
+        ref: orderId,
+        note: `Picked for order ${orderId}`,
+        by: actorId,
+      },
+    });
+    // FEFO lot deduction: pick from earliest-expiry lots first
+    let remaining = line.qty;
+    const lots = await prisma.lot.findMany({
+      where: { skuId: line.skuId, warehouseId, remainingQty: { gt: 0 } },
+      orderBy: [{ expiryDate: "asc" }, { createdAt: "asc" }],
+    });
+    for (const lot of lots) {
+      if (remaining <= 0) break;
+      const take = Math.min(lot.remainingQty, remaining);
+      await prisma.lot.update({
+        where: { id: lot.id },
+        data: { remainingQty: { decrement: take } },
       });
-      await prisma.stockMove.create({
-        data: {
-          skuId: line.skuId,
-          warehouseId,
-          type: "PICK",
-          qty: -line.qty,
-          ref: orderId,
-          note: `Picked for order ${orderId}`,
-          by: actorId,
-        },
-      });
-    })
-  );
+      remaining -= take;
+    }
+  }
 }
 
 // ── Advance order state FSM ───────────────────────────────────────────────────

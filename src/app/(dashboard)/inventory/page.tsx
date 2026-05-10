@@ -8,7 +8,7 @@ export default async function InventoryPage() {
   const session = await getServerSession(authOptions);
   if (!session || !["WAREHOUSE", "ADMIN"].includes(session.user.role)) redirect("/orders");
 
-  const [stocks, moves, catalogItems, warehouses] = await Promise.all([
+  const [stocks, moves, catalogItems, warehouses, lots] = await Promise.all([
     prisma.stock.findMany({
       include: { sku: true, warehouse: true },
       orderBy: [{ warehouse: { name: "asc" } }, { sku: { name: "asc" } }],
@@ -24,6 +24,10 @@ export default async function InventoryPage() {
       orderBy: { name: "asc" },
     }),
     prisma.warehouse.findMany({ orderBy: { name: "asc" } }),
+    prisma.lot.findMany({
+      include: { sku: { select: { name: true, sku: true } }, warehouse: { select: { name: true } } },
+      orderBy: [{ expiryDate: "asc" }, { createdAt: "desc" }],
+    }),
   ]);
 
   const serializedStocks = stocks.map(s => ({
@@ -53,12 +57,27 @@ export default async function InventoryPage() {
     at: m.at.toISOString(),
   }));
 
+  const serializedLots = lots.map(l => ({
+    id: l.id,
+    lotNumber: l.lotNumber,
+    skuName: l.sku.name,
+    skuSku: l.sku.sku,
+    warehouseName: l.warehouse.name,
+    warehouseId: l.warehouseId,
+    receivedQty: l.receivedQty,
+    remainingQty: l.remainingQty,
+    expiryDate: l.expiryDate?.toISOString() ?? null,
+    poId: l.poId,
+    createdAt: l.createdAt.toISOString(),
+  }));
+
   return (
     <InventoryClient
       stocks={serializedStocks}
       moves={serializedMoves}
       catalogItems={catalogItems}
       warehouses={warehouses}
+      lots={serializedLots}
     />
   );
 }

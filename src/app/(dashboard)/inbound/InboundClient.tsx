@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
 import { HelpButton } from "@/components/HelpButton";
-import { createPO, updatePOStatus, receivePO } from "./actions";
+import { createPO, updatePOStatus, receivePO, generateReorderPOs } from "./actions";
 
 interface PoLine { id: string; skuId: string; skuCode: string; skuName: string; unit: string; qty: number; accepted: number; damaged: number }
 interface PoRow {
@@ -139,41 +139,67 @@ function CreatePoModal({ suppliers, warehouses, catalog, onClose }: {
 function ReceiveModal({ po, onClose }: { po: PoRow; onClose: () => void }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [lineData, setLineData] = useState(po.lines.map(l => ({ lineId: l.id, skuId: l.skuId, accepted: l.qty, damaged: 0 })));
+  const [lineData, setLineData] = useState(po.lines.map(l => ({
+    lineId: l.id, skuId: l.skuId, accepted: l.qty, damaged: 0,
+    lotNumber: "", expiryDate: "",
+  })));
   const [err, setErr] = useState("");
 
-  function setVal(i: number, key: "accepted" | "damaged", val: number) {
+  function setVal<K extends keyof typeof lineData[0]>(i: number, key: K, val: typeof lineData[0][K]) {
     setLineData(d => d.map((row, j) => j === i ? { ...row, [key]: val } : row));
   }
 
   function submit(e: React.FormEvent) {
     e.preventDefault(); setErr("");
     start(async () => {
-      try { await receivePO({ poId: po.id, lines: lineData }); router.refresh(); onClose(); }
-      catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); }
+      try {
+        await receivePO({
+          poId: po.id,
+          lines: lineData.map(l => ({
+            lineId: l.lineId, skuId: l.skuId,
+            accepted: l.accepted, damaged: l.damaged,
+            lotNumber: l.lotNumber || undefined,
+            expiryDate: l.expiryDate || undefined,
+          })),
+        });
+        router.refresh(); onClose();
+      } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); }
     });
   }
 
   return (
     <Modal open onClose={onClose} title={`Receive PO — ${po.id}`}>
       <div className="card-body">
-        <p style={{ fontSize: 12.5, color: "oklch(var(--ink-3))", marginBottom: 8 }}>
+        <p style={{ fontSize: 12.5, color: "oklch(var(--ink-3))", marginBottom: 12 }}>
           {po.supplierName} → {po.warehouseName}
         </p>
-        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 90px", gap: 8, fontSize: 11.5, fontWeight: 600, color: "oklch(var(--ink-3))", padding: "0 4px" }}>
-            <span>Product</span><span style={{ textAlign: "center" }}>Accepted</span><span style={{ textAlign: "center" }}>Damaged</span>
-          </div>
+        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {po.lines.map((l, i) => (
-            <div key={l.id} style={{ display: "grid", gridTemplateColumns: "1fr 90px 90px", gap: 8, alignItems: "center" }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>{l.skuName}</div>
-                <div style={{ fontSize: 11.5, color: "oklch(var(--ink-3))" }}>{l.skuCode} · ordered {l.qty} {l.unit}</div>
+            <div key={l.id} style={{ padding: "12px 14px", borderRadius: 8, background: "oklch(var(--bg-2))", border: "1px solid oklch(var(--line))" }}>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{l.skuName}</div>
+              <div style={{ fontSize: 11.5, color: "oklch(var(--ink-3))", marginBottom: 10 }}>{l.skuCode} · ordered {l.qty} {l.unit}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "90px 90px 1fr 140px", gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "oklch(var(--ink-3))", display: "block", marginBottom: 3 }}>Accepted</label>
+                  <input type="number" className="field-input" min="0" max={l.qty} step="1" style={{ textAlign: "center" }}
+                    value={lineData[i].accepted} onChange={e => setVal(i, "accepted", parseInt(e.target.value) || 0)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "oklch(var(--ink-3))", display: "block", marginBottom: 3 }}>Damaged</label>
+                  <input type="number" className="field-input" min="0" max={l.qty} step="1" style={{ textAlign: "center" }}
+                    value={lineData[i].damaged} onChange={e => setVal(i, "damaged", parseInt(e.target.value) || 0)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "oklch(var(--ink-3))", display: "block", marginBottom: 3 }}>Lot / Batch No.</label>
+                  <input type="text" className="field-input" placeholder="e.g. LOT-2025-001"
+                    value={lineData[i].lotNumber} onChange={e => setVal(i, "lotNumber", e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "oklch(var(--ink-3))", display: "block", marginBottom: 3 }}>Expiry Date</label>
+                  <input type="date" className="field-input"
+                    value={lineData[i].expiryDate} onChange={e => setVal(i, "expiryDate", e.target.value)} />
+                </div>
               </div>
-              <input type="number" className="field-input" min="0" max={l.qty} step="1" style={{ textAlign: "center" }}
-                value={lineData[i].accepted} onChange={e => setVal(i, "accepted", parseInt(e.target.value) || 0)} />
-              <input type="number" className="field-input" min="0" max={l.qty} step="1" style={{ textAlign: "center" }}
-                value={lineData[i].damaged} onChange={e => setVal(i, "damaged", parseInt(e.target.value) || 0)} />
             </div>
           ))}
           {err && <p style={{ color: "oklch(var(--err))", fontSize: 12.5 }}>{err}</p>}

@@ -53,7 +53,7 @@ export async function updatePOStatus(id: string, status: "RECEIVING" | "DELAYED"
   revalidatePath("/inbound");
 }
 
-// ── Receive PO (mark received, update stock) ──────────────────────────────────
+// ── Receive PO (mark received, update stock, create lots) ─────────────────────
 const ReceivePoSchema = z.object({
   poId: z.string(),
   lines: z.array(z.object({
@@ -61,6 +61,8 @@ const ReceivePoSchema = z.object({
     skuId: z.string(),
     accepted: z.number().int().min(0),
     damaged: z.number().int().min(0),
+    lotNumber: z.string().optional(),
+    expiryDate: z.string().optional(),
   })),
 });
 
@@ -71,7 +73,6 @@ export async function receivePO(input: z.infer<typeof ReceivePoSchema>) {
   const po = await prisma.inboundPO.findUniqueOrThrow({ where: { id: poId } });
 
   await prisma.$transaction(async (tx) => {
-    // Update each line
     for (const l of lines) {
       await tx.inboundPOLine.update({
         where: { id: l.lineId },
@@ -79,14 +80,12 @@ export async function receivePO(input: z.infer<typeof ReceivePoSchema>) {
       });
 
       if (l.accepted > 0) {
-        // Upsert stock row
         await tx.stock.upsert({
           where: { skuId_warehouseId: { skuId: l.skuId, warehouseId: po.warehouseId } },
           create: { skuId: l.skuId, warehouseId: po.warehouseId, onHand: l.accepted },
           update: { onHand: { increment: l.accepted } },
         });
 
-        // Stock move
         await tx.stockMove.create({
           data: {
             skuId: l.skuId,
@@ -98,13 +97,104 @@ export async function receivePO(input: z.infer<typeof ReceivePoSchema>) {
             by: session.user.name ?? session.user.email,
           },
         });
+
+        // Create or update lot record if lot number provided
+        const lotNum = l.lotNumber?.trim() || `LOT-${poId}`;
+        const expiry = l.expiryDate ? new Date(l.expiryDate) : undefined;
+
+        const existing = await tx.lot.findFirst({
+          where: { lotNumber: lotNum, skuId: l.skuId, warehouseId: po.warehouseId },
+        });
+
+        if (existing) {
+          await tx.lot.update({
+            where: { id: existing.id },
+            data: {
+              receivedQty: existing.receivedQty + l.accepted,
+              remainingQty: existing.remainingQty + l.accepted,
+              ...(expiry ? { expiryDate: expiry } : {}),
+            },
+          });
+        } else {
+          await tx.lot.create({
+            data: {
+              lotNumber: lotNum,
+              skuId: l.skuId,
+              warehouseId: po.warehouseId,
+              receivedQty: l.accepted,
+              remainingQty: l.accepted,
+              expiryDate: expiry,
+              poId,
+            },
+          });
+        }
       }
     }
 
-    // Mark PO as received
     await tx.inboundPO.update({ where: { id: poId }, data: { status: "RECEIVED" } });
   });
 
   revalidatePath("/inbound");
   revalidatePath("/inventory");
+}
+
+// ── Generate Reorder POs from low-stock items ──────────────────────────────────
+export async function generateReorderPOs(warehouseId: string | "ALL") {
+  const session = await requireAccess();
+
+  const lowStocks = await prisma.stock.findMany({
+    where: {
+      ...(warehouseId !== "ALL" ? { warehouseId } : {}),
+      reorderAt: { not: null },
+    },
+    include: {
+      sku: { select: { id: true, name: true, supplierId: true } },
+    },
+  });
+
+  const needReorder = lowStocks.filter(
+    s => s.reorderAt != null && s.onHand - s.reserved <= s.reorderAt
+  );
+
+  if (needReorder.length === 0) return { created: 0 };
+
+  // Group by supplierId
+  const bySupplier = new Map<string, typeof needReorder>();
+  for (const s of needReorder) {
+    const key = s.sku.supplierId ?? "__none__";
+    if (!bySupplier.has(key)) bySupplier.set(key, []);
+    bySupplier.get(key)!.push(s);
+  }
+
+  let created = 0;
+  for (const [supplierId, items] of Array.from(bySupplier)) {
+    if (supplierId === "__none__") continue; // skip items with no supplier
+
+    const poId = genPoId() + `-R${created}`;
+    const expectedDate = new Date();
+    expectedDate.setDate(expectedDate.getDate() + 7); // default 7-day lead time
+
+    const whId = items[0].warehouseId;
+    await prisma.inboundPO.create({
+      data: {
+        id: poId,
+        supplierId,
+        warehouseId: whId,
+        expectedAt: expectedDate,
+        status: "EXPECTED",
+        total: 0,
+        lines: {
+          create: items.map(s => ({
+            skuId: s.skuId,
+            qty: Math.max((s.maxLevel ?? s.reorderAt! * 2) - s.onHand, 1),
+          })),
+        },
+      },
+    });
+    created++;
+  }
+
+  revalidatePath("/inbound");
+  revalidatePath("/inventory");
+  return { created };
 }
