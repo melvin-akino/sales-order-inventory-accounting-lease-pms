@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { FloatingPrintButton } from "../../PrintButton";
 
 interface Props { params: { id: string } }
 
@@ -39,25 +40,7 @@ export default async function PrintOrderPage({ params }: Props) {
         body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
       `}</style>
 
-      {/* Print button */}
-      <div className="no-print" style={{
-        position: "fixed", top: 16, right: 16, zIndex: 10,
-        display: "flex", gap: 8,
-      }}>
-        <a href={`/orders/${order.id}`} style={{
-          padding: "8px 14px", borderRadius: 7, border: "1px solid #d0d5dd",
-          background: "white", color: "#374151", textDecoration: "none", fontSize: 13, fontWeight: 500,
-        }}>← Back</a>
-        <button
-          onClick={() => window.print()}
-          style={{
-            padding: "8px 18px", borderRadius: 7, border: "none",
-            background: "#0d9488", color: "white", fontSize: 13, fontWeight: 600, cursor: "pointer",
-          }}
-        >
-          Print / Save PDF
-        </button>
-      </div>
+      <FloatingPrintButton backHref={`/orders/${order.id}`} />
 
       {/* Document */}
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "48px 48px 64px", background: "white" }}>

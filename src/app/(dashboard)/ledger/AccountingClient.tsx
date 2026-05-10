@@ -423,7 +423,14 @@ export function AccountingClient({ journalEntries, invoices, bills, birFilings, 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="btn btn-sm">↓ Export GL</button>
+          <a href="/api/export/journal" className="btn btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export GL
+          </a>
+          <a href="/print/financials" target="_blank" className="btn btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print Financials
+          </a>
           <button className="btn btn-primary btn-sm" onClick={() => setModal({ type: "JE" })}>+ New journal entry</button>
         </div>
       </div>
@@ -1209,9 +1216,14 @@ function BirTab({ filings, onFile }: { filings: BirFilingData[]; onFile: (f: Bir
                   <td className="num">{f.amount > 0 ? peso(f.amount) : "—"}</td>
                   <td><StatusPill map={BIR_STATUS} status={f.status} /></td>
                   <td className="text-right pr-3">
-                    {f.status === "DUE"     && <button className="btn btn-sm btn-accent" onClick={() => onFile(f)}>Mark filed</button>}
-                    {f.status === "FILED"   && <button className="btn btn-ghost btn-sm">↓ Confirmation</button>}
-                    {f.status === "PENDING" && <button className="btn btn-sm" onClick={() => onFile(f)}>Prepare</button>}
+                    <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                      <a href={`/print/bir/${f.id}`} target="_blank" className="btn btn-ghost btn-sm" title="Print form">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                      </a>
+                      {f.status === "DUE"     && <button className="btn btn-sm btn-accent" onClick={() => onFile(f)}>Mark filed</button>}
+                      {f.status === "FILED"   && <span className="btn btn-ghost btn-sm" style={{ opacity: 0.5 }}>Filed</span>}
+                      {f.status === "PENDING" && <button className="btn btn-sm" onClick={() => onFile(f)}>Prepare</button>}
+                    </div>
                   </td>
                 </tr>
               );

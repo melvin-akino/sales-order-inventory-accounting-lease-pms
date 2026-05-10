@@ -62,6 +62,37 @@ const STATUS_PILL: Record<Status, string> = {
   INACTIVE: "pill-CANCELLED",
 };
 
+function StarRating({ value }: { value: number }) {
+  const full = Math.floor(value);
+  const partial = value - full;
+  const stars = [1, 2, 3, 4, 5];
+  const color = value >= 4 ? "oklch(0.78 0.18 85)" : value >= 3 ? "oklch(0.72 0.15 55)" : "oklch(0.62 0.18 25)";
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+      {stars.map((i) => {
+        const fill = i <= full ? 1 : i === full + 1 ? partial : 0;
+        return (
+          <svg key={i} width="12" height="12" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+            <defs>
+              <linearGradient id={`sg-${i}-${Math.round(value * 10)}`}>
+                <stop offset={`${fill * 100}%`} stopColor={color} />
+                <stop offset={`${fill * 100}%`} stopColor="oklch(var(--line))" />
+              </linearGradient>
+            </defs>
+            <polygon
+              points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+              fill={fill === 1 ? color : fill === 0 ? "oklch(var(--line))" : `url(#sg-${i}-${Math.round(value * 10)})`}
+              stroke={color}
+              strokeWidth="1"
+            />
+          </svg>
+        );
+      })}
+      <span style={{ fontSize: 11, marginLeft: 3, color: "oklch(var(--ink-3))", fontFamily: "var(--font-geist-mono, monospace)" }}>{value.toFixed(1)}</span>
+    </span>
+  );
+}
+
 function SupplierForm({ form, setForm, err, pending, onCancel, onSubmit, submitLabel }: {
   form: FormState; setForm: (f: FormState) => void;
   err: string; pending: boolean;
@@ -185,6 +216,10 @@ export function SuppliersClient({ suppliers }: { suppliers: SupplierRow[] }) {
       <div className="flex items-center gap-3 mb-5">
         <h1 style={{ fontSize: 17, fontWeight: 600, flex: 1 }}>Suppliers</h1>
         <span style={{ fontSize: 12, color: "oklch(var(--ink-3))" }}>{suppliers.length} suppliers</span>
+        <a href="/api/export/suppliers" className="btn btn-sm">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </a>
         <button className="btn btn-primary" onClick={openCreate}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
           New Supplier
@@ -229,9 +264,7 @@ export function SuppliersClient({ suppliers }: { suppliers: SupplierRow[] }) {
                 <td className="dim">{s.terms}</td>
                 <td className="num dim">{s.leadTimeDays}d</td>
                 <td className="num">
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 12 }}>
-                    ★ {parseFloat(s.rating).toFixed(1)}
-                  </span>
+                  <StarRating value={parseFloat(s.rating)} />
                 </td>
                 <td className="dim" style={{ fontSize: 12 }}>{s.contactEmail ?? s.contactPhone ?? "—"}</td>
                 <td><span className={`pill ${STATUS_PILL[s.status]}`}>{s.status.replace("_", " ")}</span></td>

@@ -176,6 +176,10 @@ export function PmsClient({ workOrders, assets, technicians, role, myTechnicianI
             <button className="tab" aria-selected={view === "tech"} onClick={() => setView("tech")}>My Tasks</button>
           </div>
         )}
+        <a href="/api/export/pms" className="btn btn-sm">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </a>
         <Link href="/pms/board" className="btn btn-sm" target="_blank">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />
