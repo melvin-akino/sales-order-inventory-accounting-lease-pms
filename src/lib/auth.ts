@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
           include: { customer: true, technician: true },
         });
 
-        if (!user) return null;
+        if (!user || user.active === false) return null;
 
         const passwordMatch = await compare(credentials.password, user.passwordHash);
         if (!passwordMatch) return null;
@@ -45,9 +45,9 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as { role: Role }).role;
-        token.customerId = (user as { customerId?: string }).customerId;
-        token.technicianId = (user as { technicianId?: string }).technicianId;
+        token.role = (user as unknown as { role: Role }).role;
+        token.customerId = (user as unknown as { customerId?: string }).customerId;
+        token.technicianId = (user as unknown as { technicianId?: string }).technicianId;
       }
       return token;
     },

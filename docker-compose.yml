@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: vitalsign-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vitalsign
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vitalsign"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Schema push + seed (runs once, exits) ───────────────────────────────────
+  migrate:
+    build:
+      context: .
+      target: builder
+    container_name: vitalsign-migrate
+    command: >
+      sh -c "npx prisma db push --accept-data-loss &&
+             npx tsx prisma/seed.ts"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/vitalsign
+      DIRECT_URL: postgresql://postgres:postgres@db:5432/vitalsign
+      NEXTAUTH_SECRET: demo-secret-for-local-dev-change-in-prod
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── Next.js application ─────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vitalsign-ops
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/vitalsign
+      DIRECT_URL: postgresql://postgres:postgres@db:5432/vitalsign
+      NEXTAUTH_SECRET: demo-secret-for-local-dev-change-in-prod
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+      NEXT_PUBLIC_APP_NAME: "Vital Sign · Ops"
+      NEXT_PUBLIC_APP_ORG: "MediSupply PH"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  pgdata:

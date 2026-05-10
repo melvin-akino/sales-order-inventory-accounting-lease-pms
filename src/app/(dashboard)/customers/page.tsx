@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { CustomersClient } from "./CustomersClient";
 
 export default async function CustomersPage() {
   const session = await getServerSession(authOptions);
@@ -9,35 +10,20 @@ export default async function CustomersPage() {
 
   const customers = await prisma.customer.findMany({ orderBy: { name: "asc" } });
 
-  return (
-    <div>
-      <h1 className="text-[18px] font-semibold mb-4">Customers</h1>
-      <div className="tbl-wrap">
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th className="id">ID</th>
-              <th>Name</th>
-              <th>Type</th>
-              <th>TIN</th>
-              <th>City</th>
-              <th>Contact</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((c) => (
-              <tr key={c.id} style={{ cursor: "default" }}>
-                <td className="id">{c.id}</td>
-                <td>{c.name}</td>
-                <td className="dim">{c.type}</td>
-                <td className="dim">{c.tin ?? "—"}</td>
-                <td className="dim">{c.city ?? "—"}</td>
-                <td className="dim">{c.contactEmail ?? c.contactPhone ?? "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const serialized = customers.map(c => ({
+    id: c.id,
+    code: c.code,
+    name: c.name,
+    type: c.type,
+    tin: c.tin,
+    region: c.region,
+    city: c.city,
+    terms: c.terms,
+    creditLimit: c.creditLimit.toString(),
+    contactEmail: c.contactEmail,
+    contactPhone: c.contactPhone,
+    createdAt: c.createdAt.toISOString(),
+  }));
+
+  return <CustomersClient customers={serialized} />;
 }

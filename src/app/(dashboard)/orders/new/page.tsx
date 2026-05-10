@@ -7,22 +7,33 @@ import { NewOrderForm } from "./NewOrderForm";
 
 export default async function NewOrderPage() {
   const session = await getServerSession(authOptions);
-  if (!session || !["AGENT", "ADMIN"].includes(session.user.role)) redirect("/orders");
+  if (!session || !["AGENT", "ADMIN", "CUSTOMER"].includes(session.user.role)) redirect("/orders");
+
+  const isCustomer = session.user.role === "CUSTOMER";
 
   const [customers, catalog, warehouses] = await Promise.all([
-    prisma.customer.findMany({ orderBy: { name: "asc" } }),
+    isCustomer
+      ? prisma.customer.findMany({ where: { id: session.user.customerId! }, orderBy: { name: "asc" } })
+      : prisma.customer.findMany({ orderBy: { name: "asc" } }),
     prisma.catalogItem.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.warehouse.findMany({ orderBy: { name: "asc" } }),
   ]);
 
+  const backHref = isCustomer ? "/portal" : "/orders";
+
   return (
     <div className="max-w-[760px]">
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/orders" className="btn btn-ghost btn-sm">← Orders</Link>
+        <Link href={backHref} className="btn btn-ghost btn-sm">← {isCustomer ? "My Portal" : "Orders"}</Link>
         <h1 className="text-[17px] font-semibold">New Sales Order</h1>
       </div>
-
-      <NewOrderForm customers={customers} catalog={catalog} warehouses={warehouses} />
+      <NewOrderForm
+        customers={customers}
+        catalog={catalog}
+        warehouses={warehouses}
+        fixedCustomerId={isCustomer ? session.user.customerId ?? undefined : undefined}
+        backHref={backHref}
+      />
     </div>
   );
 }

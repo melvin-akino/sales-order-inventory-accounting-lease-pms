@@ -41,7 +41,7 @@ export default async function OrdersPage({ searchParams }: Props) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-[18px] font-semibold">Sales Orders</h1>
-        {(role === "AGENT" || role === "ADMIN") && (
+        {(role === "AGENT" || role === "ADMIN" || role === "CUSTOMER") && (
           <Link href="/orders/new" className="btn btn-accent">
             + New Order
           </Link>

@@ -90,6 +90,11 @@ export async function createOrder(input: z.infer<typeof NewOrderSchema>) {
   const count = await prisma.order.count({ where: { createdAt: { gte: new Date(`${year}-01-01`) } } });
   const orderId = `SO-${year}-${String(count + 1).padStart(4, "0")}`;
 
+  // Fetch catalog items to get name + unit for each line
+  const skuIds = data.lines.map((l) => l.skuId);
+  const items = await prisma.catalogItem.findMany({ where: { id: { in: skuIds } } });
+  const itemMap = Object.fromEntries(items.map((i) => [i.id, i]));
+
   const order = await prisma.order.create({
     data: {
       id: orderId,
@@ -105,6 +110,8 @@ export async function createOrder(input: z.infer<typeof NewOrderSchema>) {
       lines: {
         create: data.lines.map((l) => ({
           skuId: l.skuId,
+          name: itemMap[l.skuId]?.name ?? l.skuId,
+          unit: itemMap[l.skuId]?.unit ?? "pc",
           qty: l.qty,
           unitPrice: l.unitPrice,
           lineTotal: l.qty * l.unitPrice,

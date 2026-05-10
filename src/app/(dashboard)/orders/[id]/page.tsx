@@ -21,7 +21,7 @@ export default async function OrderDetailPage({ params }: Props) {
       customer: true,
       lines: { include: { sku: true } },
       events: { include: { actor: true }, orderBy: { createdAt: "asc" } },
-      shipments: true,
+      shipment: true,
     },
   });
   if (!order) notFound();
@@ -117,7 +117,7 @@ export default async function OrderDetailPage({ params }: Props) {
                         <div className="flex items-center gap-2">
                           <StatePill state={ev.state as OrderState | "CANCELLED"} />
                           <span className="text-[11.5px]" style={{ color: "oklch(var(--ink-3))" }}>
-                            by {ev.actor.name} · {fmtDateTime(ev.createdAt)}
+                            by {ev.actor?.name ?? "System"} · {fmtDateTime(ev.createdAt)}
                           </span>
                         </div>
                         {ev.note && <p className="text-[12.5px] mt-1" style={{ color: "oklch(var(--ink-2))" }}>{ev.note}</p>}

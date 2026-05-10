@@ -11,29 +11,31 @@ interface Props {
   customers: Customer[];
   catalog: CatalogItem[];
   warehouses: Warehouse[];
+  fixedCustomerId?: string;  // set for CUSTOMER role
+  backHref?: string;
 }
 
 interface Line { skuId: string; qty: number; unitPrice: number }
 
-export function NewOrderForm({ customers, catalog, warehouses }: Props) {
+export function NewOrderForm({ customers, catalog, warehouses, fixedCustomerId, backHref = "/orders" }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const [customerId, setCustomerId] = useState("");
+  const [customerId, setCustomerId] = useState(fixedCustomerId ?? "");
   const [warehouseId, setWarehouseId] = useState(warehouses[0]?.id ?? "");
   const [cwt2307, setCwt2307] = useState(false);
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<Line[]>([{ skuId: "", qty: 1, unitPrice: 0 }]);
 
-  function addLine() { setLines((l) => [...l, { skuId: "", qty: 1, unitPrice: 0 }]); }
-  function removeLine(i: number) { setLines((l) => l.filter((_, idx) => idx !== i)); }
+  function addLine() { setLines(l => [...l, { skuId: "", qty: 1, unitPrice: 0 }]); }
+  function removeLine(i: number) { setLines(l => l.filter((_, idx) => idx !== i)); }
 
   function updateLine(i: number, field: keyof Line, value: string | number) {
-    setLines((prev) => {
+    setLines(prev => {
       const next = [...prev];
       if (field === "skuId") {
-        const item = catalog.find((c) => c.id === value);
+        const item = catalog.find(c => c.id === value);
         next[i] = { ...next[i], skuId: value as string, unitPrice: item ? Number(item.unitPrice) : 0 };
       } else {
         next[i] = { ...next[i], [field]: Number(value) };
@@ -48,7 +50,7 @@ export function NewOrderForm({ customers, catalog, warehouses }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!customerId || !warehouseId) { toast("Select customer and warehouse", "error"); return; }
-    if (lines.some((l) => !l.skuId || l.qty < 1 || l.unitPrice <= 0)) {
+    if (lines.some(l => !l.skuId || l.qty < 1 || l.unitPrice <= 0)) {
       toast("Complete all line items", "error"); return;
     }
 
@@ -63,84 +65,75 @@ export function NewOrderForm({ customers, catalog, warehouses }: Props) {
     });
   }
 
+  const fixedCustomerName = fixedCustomerId ? customers[0]?.name : undefined;
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/* Header fields */}
       <div className="card">
         <div className="card-head"><span className="card-h">Order Details</span></div>
         <div className="card-body grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
           <div>
             <label className="field-label">Customer</label>
-            <select className="field-input" value={customerId} onChange={(e) => setCustomerId(e.target.value)} required>
-              <option value="">Select customer…</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            {fixedCustomerName ? (
+              <div className="field-input" style={{ display:"flex", alignItems:"center", background:"oklch(var(--bg-2))", color:"oklch(var(--ink))", cursor:"not-allowed" }}>
+                {fixedCustomerName}
+              </div>
+            ) : (
+              <select className="field-input" value={customerId} onChange={e => setCustomerId(e.target.value)} required>
+                <option value="">Select customer…</option>
+                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
           </div>
           <div>
             <label className="field-label">Warehouse</label>
-            <select className="field-input" value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} required>
-              {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+            <select className="field-input" value={warehouseId} onChange={e => setWarehouseId(e.target.value)} required>
+              {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
           <div className="col-span-2">
             <label className="field-label">Notes</label>
-            <textarea className="field-input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Special instructions…" />
+            <textarea className="field-input" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Special instructions or delivery notes…" />
           </div>
           <div className="col-span-2 flex items-center gap-2">
-            <input type="checkbox" id="cwt" checked={cwt2307} onChange={(e) => setCwt2307(e.target.checked)} className="w-3.5 h-3.5" />
-            <label htmlFor="cwt" className="text-[12.5px]" style={{ color: "oklch(var(--ink-2))" }}>
+            <input type="checkbox" id="cwt" checked={cwt2307} onChange={e => setCwt2307(e.target.checked)} className="w-3.5 h-3.5" />
+            <label htmlFor="cwt" className="text-[12.5px]" style={{ color:"oklch(var(--ink-2))" }}>
               Apply BIR Form 2307 — Creditable Withholding Tax (−2%)
             </label>
           </div>
         </div>
       </div>
 
-      {/* Lines */}
       <div className="card">
         <div className="card-head">
           <span className="card-h flex-1">Line Items</span>
           <button type="button" onClick={addLine} className="btn btn-sm">+ Add line</button>
         </div>
-        <div className="tbl-wrap" style={{ border: 0, borderRadius: 0 }}>
+        <div className="tbl-wrap" style={{ border:0, borderRadius:0 }}>
           <table className="tbl">
             <thead>
               <tr>
                 <th>Product</th>
-                <th className="num" style={{ width: 80 }}>Qty</th>
-                <th className="num" style={{ width: 130 }}>Unit Price</th>
-                <th className="num" style={{ width: 130 }}>Line Total</th>
-                <th style={{ width: 40 }}></th>
+                <th className="num" style={{ width:80 }}>Qty</th>
+                <th className="num" style={{ width:130 }}>Unit Price</th>
+                <th className="num" style={{ width:130 }}>Line Total</th>
+                <th style={{ width:40 }}></th>
               </tr>
             </thead>
             <tbody>
               {lines.map((line, i) => (
-                <tr key={i} style={{ cursor: "default" }}>
+                <tr key={i} style={{ cursor:"default" }}>
                   <td>
-                    <select
-                      className="field-input"
-                      value={line.skuId}
-                      onChange={(e) => updateLine(i, "skuId", e.target.value)}
-                      required
-                    >
+                    <select className="field-input" value={line.skuId} onChange={e => updateLine(i, "skuId", e.target.value)} required>
                       <option value="">Select product…</option>
-                      {catalog.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      {catalog.map(c => <option key={c.id} value={c.id}>{c.name} ({c.sku})</option>)}
                     </select>
                   </td>
                   <td className="num">
-                    <input
-                      type="number" min={1} className="field-input text-right"
-                      value={line.qty}
-                      onChange={(e) => updateLine(i, "qty", e.target.value)}
-                      required
-                    />
+                    <input type="number" min={1} className="field-input text-right" value={line.qty} onChange={e => updateLine(i, "qty", e.target.value)} required />
                   </td>
                   <td className="num">
-                    <input
-                      type="number" min={0} step={0.01} className="field-input text-right"
-                      value={line.unitPrice}
-                      onChange={(e) => updateLine(i, "unitPrice", e.target.value)}
-                      required
-                    />
+                    <input type="number" min={0} step={0.01} className="field-input text-right" value={line.unitPrice} onChange={e => updateLine(i, "unitPrice", e.target.value)} required />
                   </td>
                   <td className="num">{peso(line.qty * line.unitPrice)}</td>
                   <td>
@@ -153,9 +146,7 @@ export function NewOrderForm({ customers, catalog, warehouses }: Props) {
             </tbody>
           </table>
         </div>
-
-        {/* Totals */}
-        <div className="card-body border-t" style={{ borderColor: "oklch(var(--line))" }}>
+        <div className="card-body border-t" style={{ borderColor:"oklch(var(--line))" }}>
           <div className="ledger">
             <div className="ledger-row"><span>Subtotal</span><span></span><span>{peso(subtotal)}</span></div>
             <div className="ledger-row"><span className="ledger-row-cr">VAT (12%)</span><span></span><span>{peso(vat)}</span></div>
@@ -166,9 +157,9 @@ export function NewOrderForm({ customers, catalog, warehouses }: Props) {
       </div>
 
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => router.push("/orders")} className="btn">Cancel</button>
+        <button type="button" onClick={() => router.push(backHref)} className="btn">Cancel</button>
         <button type="submit" disabled={isPending} className="btn btn-accent">
-          {isPending ? "Creating…" : "Create order"}
+          {isPending ? "Creating…" : "Create Order"}
         </button>
       </div>
     </form>
