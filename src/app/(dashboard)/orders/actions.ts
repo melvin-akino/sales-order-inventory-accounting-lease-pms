@@ -8,6 +8,10 @@ import { NEXT_STATE } from "@/types";
 import type { OrderState } from "@prisma/client";
 import { z } from "zod";
 import { orderTotal } from "@/lib/utils";
+import { getCustomerCredit } from "@/lib/credit";
+import { sendOrderEmail } from "@/lib/email";
+
+export { getCustomerCredit };
 
 // ── Advance order state FSM ───────────────────────────────────────────────────
 export async function advanceOrderState(orderId: string) {
@@ -32,6 +36,15 @@ export async function advanceOrderState(orderId: string) {
       },
     }),
   ]);
+
+  // Send email notification (non-blocking — don't fail the action if email fails)
+  const fullOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { customer: { include: { users: { where: { active: true }, select: { email: true } } } } },
+  });
+  if (fullOrder) {
+    sendOrderEmail(fullOrder.id, transition.next as OrderState, fullOrder.customer).catch(() => {});
+  }
 
   revalidatePath("/orders");
   revalidatePath(`/orders/${orderId}`);
@@ -78,13 +91,30 @@ const NewOrderSchema = z.object({
   ).min(1),
 });
 
-export async function createOrder(input: z.infer<typeof NewOrderSchema>) {
+export async function createOrder(input: z.infer<typeof NewOrderSchema> & { overrideCreditLimit?: boolean }) {
   const session = await getServerSession(authOptions);
   if (!session) throw new Error("Unauthenticated");
 
   const data = NewOrderSchema.parse(input);
   const subtotal = data.lines.reduce((s, l) => s + l.qty * l.unitPrice, 0);
   const { vat, cwt, total } = orderTotal(subtotal, data.cwt2307);
+
+  // ── Credit limit check ────────────────────────────────────────────────────
+  const credit = await getCustomerCredit(data.customerId);
+  if (credit.creditLimit > 0) {
+    const projectedOutstanding = credit.outstanding + total;
+    if (projectedOutstanding > credit.creditLimit) {
+      const canOverride = ["FINANCE", "ADMIN"].includes(session.user.role);
+      if (!canOverride) {
+        throw new Error(
+          `Credit limit exceeded. Available: ₱${credit.available.toLocaleString("en-PH", { minimumFractionDigits: 2 })} · Order total: ₱${total.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`
+        );
+      }
+      if (!input.overrideCreditLimit) {
+        throw new Error(`CREDIT_LIMIT_WARNING:₱${credit.available.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`);
+      }
+    }
+  }
 
   const year = new Date().getFullYear();
   const count = await prisma.order.count({ where: { createdAt: { gte: new Date(`${year}-01-01`) } } });

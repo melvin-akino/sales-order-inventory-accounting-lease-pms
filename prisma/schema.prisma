@@ -38,6 +38,7 @@ model User {
   orderEvents  OrderEvent[]
   journalEntries JournalEntry[]
   woNotes      WoNote[]
+  quotations   Quotation[]  @relation("QuoteAgent")
 
   @@map("users")
 }
@@ -59,10 +60,11 @@ model Customer {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  users     User[]
-  orders    Order[]
-  leases    Lease[]
-  invoices  Invoice[]
+  users       User[]
+  orders      Order[]
+  leases      Lease[]
+  invoices    Invoice[]
+  quotations  Quotation[]
 
   @@map("customers")
 }
@@ -118,11 +120,12 @@ model CatalogItem {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
-  supplier     Supplier?      @relation(fields: [supplierId], references: [id])
-  orderLines   OrderLine[]
-  stockRows    Stock[]
-  stockMoves   StockMove[]
-  inboundLines InboundPOLine[]
+  supplier      Supplier?       @relation(fields: [supplierId], references: [id])
+  orderLines    OrderLine[]
+  stockRows     Stock[]
+  stockMoves    StockMove[]
+  inboundLines  InboundPOLine[]
+  quotationLines QuotationLine[]
 
   @@map("catalog_items")
 }
@@ -140,6 +143,7 @@ model Warehouse {
   stock         Stock[]
   stockMoves    StockMove[]
   inboundPOs    InboundPO[]
+  quotations    Quotation[]
   transfersFrom Transfer[] @relation("TransferFrom")
   transfersTo   Transfer[] @relation("TransferTo")
 
@@ -181,6 +185,7 @@ model Order {
   events      OrderEvent[]
   shipment    Shipment?
   invoices    Invoice[]
+  quotation   Quotation?
 
   @@map("orders")
 }
@@ -584,4 +589,57 @@ model BirFiling {
   status BirStatus @default(PENDING)
 
   @@map("bir_filings")
+}
+
+// ─── Quotations / Proforma ────────────────────────────────────────────────────
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  CONVERTED
+  EXPIRED
+  REJECTED
+}
+
+model Quotation {
+  id          String      @id
+  customerId  String
+  agentId     String?
+  warehouseId String
+  status      QuoteStatus @default(DRAFT)
+  validUntil  DateTime
+  notes       String?
+  subtotal    Decimal     @db.Decimal(14, 2)
+  vat         Decimal     @db.Decimal(14, 2)
+  cwt         Decimal     @db.Decimal(14, 2) @default(0)
+  cwt2307     Boolean     @default(false)
+  total       Decimal     @db.Decimal(14, 2)
+  orderId     String?     @unique
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  customer    Customer    @relation(fields: [customerId],   references: [id])
+  agent       User?       @relation("QuoteAgent", fields: [agentId], references: [id])
+  warehouse   Warehouse   @relation(fields: [warehouseId],  references: [id])
+  lines       QuotationLine[]
+  order       Order?      @relation(fields: [orderId],      references: [id])
+
+  @@map("quotations")
+}
+
+model QuotationLine {
+  id          String    @id @default(cuid())
+  quotationId String
+  skuId       String
+  name        String
+  unit        String
+  qty         Int
+  unitPrice   Decimal   @db.Decimal(12, 2)
+  lineTotal   Decimal   @db.Decimal(12, 2)
+
+  quotation   Quotation   @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  sku         CatalogItem @relation(fields: [skuId],       references: [id])
+
+  @@map("quotation_lines")
 }

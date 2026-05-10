@@ -111,8 +111,8 @@ export default async function PrintInvoicePage({ params }: { params: { id: strin
                 <td style={cell}>{line.name}</td>
                 <td style={{ ...cell, color: "#6b7280" }}>{line.unit}</td>
                 <td style={cellR}>{line.qty}</td>
-                <td style={cellR}>{peso(line.unitPrice)}</td>
-                <td style={cellR}>{peso(line.lineTotal)}</td>
+                <td style={cellR}>{peso(Number(line.unitPrice))}</td>
+                <td style={cellR}>{peso(Number(line.lineTotal))}</td>
               </tr>
             ))}
           </tbody>

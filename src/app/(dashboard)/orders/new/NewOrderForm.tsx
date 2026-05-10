@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createOrder } from "../actions";
+import { createOrder, getCustomerCredit } from "../actions";
 import { useToast } from "@/components/ui/Toast";
 import { peso, orderTotal } from "@/lib/utils";
 import type { Customer, CatalogItem, Warehouse } from "@prisma/client";
+import type { CreditStatus } from "@/lib/credit";
 
 interface Props {
   customers: Customer[];
@@ -17,6 +18,43 @@ interface Props {
 
 interface Line { skuId: string; qty: number; unitPrice: number }
 
+function CreditBar({ credit, orderTotal, onOverride, overridden }: {
+  credit: CreditStatus; orderTotal: number;
+  onOverride: (v: boolean) => void; overridden: boolean;
+}) {
+  const projectedUtil = credit.creditLimit > 0
+    ? Math.min(((credit.outstanding + orderTotal) / credit.creditLimit) * 100, 100)
+    : 0;
+  const isOver = credit.outstanding + orderTotal > credit.creditLimit;
+  const barColor = isOver ? "#dc2626" : projectedUtil > 75 ? "#d97706" : "#16a34a";
+
+  return (
+    <div style={{ padding: "10px 14px", borderRadius: 7, border: `1px solid ${isOver ? "#fecaca" : "#e5e7eb"}`, background: isOver ? "#fef2f2" : "oklch(var(--bg-2))" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: isOver ? "#dc2626" : "oklch(var(--ink-2))" }}>
+          {isOver ? "⚠ Credit limit exceeded" : "Credit utilization"}
+        </span>
+        <span style={{ fontSize: 11, fontFamily: "monospace", color: "oklch(var(--ink-3))" }}>
+          {peso(credit.outstanding + orderTotal)} / {peso(credit.creditLimit)}
+        </span>
+      </div>
+      <div style={{ height: 6, borderRadius: 3, background: "oklch(var(--line))", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${projectedUtil}%`, background: barColor, borderRadius: 3, transition: "width 0.3s" }} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 11, color: "oklch(var(--ink-3))" }}>
+        <span>Outstanding AR: {peso(credit.outstanding)}</span>
+        <span>Available: {peso(Math.max(0, credit.available))}</span>
+      </div>
+      {isOver && (
+        <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: 12, cursor: "pointer" }}>
+          <input type="checkbox" checked={overridden} onChange={e => onOverride(e.target.checked)} />
+          <span style={{ color: "#dc2626", fontWeight: 500 }}>Override credit limit (Finance/Admin only)</span>
+        </label>
+      )}
+    </div>
+  );
+}
+
 export function NewOrderForm({ customers, catalog, warehouses, fixedCustomerId, backHref = "/orders" }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -27,6 +65,16 @@ export function NewOrderForm({ customers, catalog, warehouses, fixedCustomerId, 
   const [cwt2307, setCwt2307] = useState(false);
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<Line[]>([{ skuId: "", qty: 1, unitPrice: 0 }]);
+  const [credit, setCredit] = useState<CreditStatus | null>(null);
+  const [creditOverride, setCreditOverride] = useState(false);
+
+  // Fetch credit status whenever customer changes
+  useEffect(() => {
+    setCreditOverride(false);
+    setCredit(null);
+    if (!customerId) return;
+    getCustomerCredit(customerId).then(setCredit).catch(() => {});
+  }, [customerId]);
 
   function addLine() { setLines(l => [...l, { skuId: "", qty: 1, unitPrice: 0 }]); }
   function removeLine(i: number) { setLines(l => l.filter((_, idx) => idx !== i)); }
@@ -56,11 +104,17 @@ export function NewOrderForm({ customers, catalog, warehouses, fixedCustomerId, 
 
     startTransition(async () => {
       try {
-        const id = await createOrder({ customerId, warehouseId, cwt2307, notes, lines });
+        const id = await createOrder({ customerId, warehouseId, cwt2307, notes, lines, overrideCreditLimit: creditOverride });
         toast(`Order ${id} created`, "success");
         router.push(`/orders/${id}`);
       } catch (e) {
-        toast((e as Error).message, "error");
+        const msg = (e as Error).message;
+        if (msg.startsWith("CREDIT_LIMIT_WARNING:")) {
+          const available = msg.split(":")[1];
+          toast(`Over credit limit (available: ${available}). Check the override box to proceed.`, "error");
+          return;
+        }
+        toast(msg, "error");
       }
     });
   }
@@ -91,6 +145,13 @@ export function NewOrderForm({ customers, catalog, warehouses, fixedCustomerId, 
               {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
+          {/* Credit limit bar */}
+          {credit && credit.creditLimit > 0 && (
+            <div className="col-span-2">
+              <CreditBar credit={credit} orderTotal={total} onOverride={setCreditOverride} overridden={creditOverride} />
+            </div>
+          )}
+
           <div className="col-span-2">
             <label className="field-label">Notes</label>
             <textarea className="field-input" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Special instructions or delivery notes…" />

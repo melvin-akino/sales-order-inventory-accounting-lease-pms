@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "leases",    label: "Leases",         href: "/leases",    icon: "file-text",     roles: ["FINANCE", "ADMIN"] },
   { id: "pms",       label: "PMS / Work Ord", href: "/pms",       icon: "tool",          roles: ["TECHNICIAN", "WAREHOUSE", "ADMIN"] },
   { id: "equipment", label: "Equipment",      href: "/equipment", icon: "cpu",           roles: ["WAREHOUSE", "ADMIN"] },
+  { id: "quotes",    label: "Quotations",     href: "/quotes",    icon: "file-plus",     roles: ["AGENT", "FINANCE", "ADMIN"] },
   { id: "catalog",   label: "Catalog",        href: "/catalog",   icon: "grid",          roles: ["AGENT", "FINANCE", "ADMIN"] },
   { id: "customers", label: "Customers",      href: "/customers", icon: "users",         roles: ["AGENT", "FINANCE", "ADMIN"] },
   { id: "suppliers", label: "Suppliers",      href: "/suppliers", icon: "briefcase",     roles: ["WAREHOUSE", "FINANCE", "ADMIN"] },
@@ -47,6 +48,7 @@ const ICON_PATHS: Record<string, string> = {
   "cpu":           "M18 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3",
   "inbox":         "M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",
   "bar-chart":     "M18 20V10M12 20V4M6 20v-6",
+  "file-plus":     "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 18v-6M9 15h6",
   "activity":      "M22 12h-4l-3 9L9 3l-3 9H2",
   "log-out":       "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
 };
