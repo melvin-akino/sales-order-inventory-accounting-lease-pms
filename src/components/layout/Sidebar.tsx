@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { useMobileNav } from "@/components/layout/NavContext";
 import type { NavItem } from "@/types";
 import type { Role } from "@prisma/client";
 
@@ -12,7 +13,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "orders",    label: "Sales Orders",   href: "/orders",    icon: "shopping-cart", roles: ["AGENT", "FINANCE", "WAREHOUSE", "ADMIN", "CUSTOMER"] },
   { id: "approvals", label: "Approvals",      href: "/approvals", icon: "check-square",  roles: ["FINANCE", "ADMIN"] },
   { id: "warehouse", label: "Warehouse",      href: "/warehouse", icon: "package",       roles: ["WAREHOUSE", "ADMIN"] },
-  { id: "shipments", label: "Shipments",      href: "/shipments", icon: "truck",         roles: ["WAREHOUSE", "FINANCE", "ADMIN"] },
+  { id: "shipments", label: "Shipments",      href: "/shipments", icon: "truck",         roles: ["WAREHOUSE", "FINANCE", "ADMIN", "DRIVER"] },
   { id: "inventory", label: "Inventory",      href: "/inventory", icon: "layers",        roles: ["WAREHOUSE", "ADMIN"] },
   { id: "portal",    label: "My Portal",      href: "/portal",    icon: "user-circle",   roles: ["CUSTOMER"] },
   { id: "leases",    label: "Leases",         href: "/leases",    icon: "file-text",     roles: ["FINANCE", "ADMIN"] },
@@ -65,6 +66,7 @@ function canSee(item: NavItem, role: Role) {
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { open, close } = useMobileNav();
   const role = session?.user?.role as Role | undefined;
 
   if (!role) return null;
@@ -72,7 +74,12 @@ export function Sidebar() {
   const visible = NAV_ITEMS.filter((item) => canSee(item, role));
 
   return (
-    <aside className="sidebar">
+    <>
+      {/* Mobile scrim */}
+      {open && (
+        <div className="mobile-scrim" onClick={close} aria-hidden />
+      )}
+      <aside className="sidebar" data-mobile-open={open ? "true" : "false"}>
       <div className="sidebar-brand">
         <div className="sidebar-logo">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -82,6 +89,17 @@ export function Sidebar() {
         <span className="sidebar-org">
           {process.env.NEXT_PUBLIC_ORG ?? "MediSupply"}
         </span>
+        <button
+          onClick={close}
+          className="sidebar-signout ml-auto"
+          style={{ display: "none" }}
+          aria-label="Close menu"
+          data-mobile-close
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       <nav className="sidebar-nav">
@@ -122,5 +140,6 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

@@ -1,65 +1,46 @@
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { peso, fmtDate } from "@/lib/utils";
+import { LeasesClient } from "./LeasesClient";
 
 export default async function LeasesPage() {
   const session = await getServerSession(authOptions);
-  const role = session!.user.role;
+  if (!session || !["FINANCE", "ADMIN"].includes(session.user.role)) redirect("/orders");
 
-  const where =
-    role === "CUSTOMER"
-      ? { customerId: session!.user.customerId }
-      : {};
+  const role = session.user.role;
 
-  const leases = await prisma.lease.findMany({
-    where,
-    include: { customer: true, assets: { include: { asset: true } } },
-    orderBy: { startDate: "desc" },
-  });
+  const [leases, customers, assets] = await Promise.all([
+    prisma.lease.findMany({
+      include: { customer: true, assets: { include: { asset: true } } },
+      orderBy: { startDate: "desc" },
+    }),
+    prisma.customer.findMany({ orderBy: { name: "asc" } }),
+    prisma.asset.findMany({ orderBy: { name: "asc" } }),
+  ]);
+
+  const serialized = leases.map((l) => ({
+    id: l.id,
+    startDate: l.startDate.toISOString(),
+    endDate: l.endDate.toISOString(),
+    monthlyRate: l.monthlyRate.toString(),
+    notes: l.notes,
+    active: l.active,
+    customer: { id: l.customer.id, name: l.customer.name },
+    assetNames: l.assets.map((la) => la.asset.name),
+  }));
 
   return (
     <div>
-      <h1 className="text-[18px] font-semibold mb-4">Equipment Leases</h1>
-      <div className="tbl-wrap">
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th className="id">Lease ID</th>
-              <th>Customer</th>
-              <th>Assets</th>
-              <th>Start</th>
-              <th>End</th>
-              <th className="num">Monthly Rate</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leases.length === 0 && (
-              <tr><td colSpan={7}><div className="empty-state">No leases</div></td></tr>
-            )}
-            {leases.map((l) => {
-              const now = new Date();
-              const active = l.startDate <= now && l.endDate >= now;
-              return (
-                <tr key={l.id} style={{ cursor: "default" }}>
-                  <td className="id">{l.id}</td>
-                  <td>{l.customer.name}</td>
-                  <td>{l.assets.map((la) => la.asset.name).join(", ")}</td>
-                  <td className="dim">{fmtDate(l.startDate)}</td>
-                  <td className="dim">{fmtDate(l.endDate)}</td>
-                  <td className="num">{peso(l.monthlyRate)}</td>
-                  <td>
-                    <span className={`pill ${active ? "pill-APPROVED" : "pill-CANCELLED"}`}>
-                      {active ? "Active" : "Expired"}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {!["FINANCE", "ADMIN"].includes(role) && (
+        <h1 className="text-[18px] font-semibold mb-4">Equipment Leases</h1>
+      )}
+      <LeasesClient
+        leases={serialized}
+        customers={customers.map((c) => ({ id: c.id, name: c.name }))}
+        assets={assets.map((a) => ({ id: a.id, name: a.name, serialNumber: a.serialNumber }))}
+        role={role}
+      />
     </div>
   );
 }
