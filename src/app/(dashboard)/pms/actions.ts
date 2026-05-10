@@ -77,6 +77,28 @@ export async function assignTechnician(id: string, technicianId: string) {
   revalidatePath("/pms");
 }
 
+export async function claimWorkOrder(id: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error("Unauthenticated");
+  requirePms(session.user.role);
+
+  const technicianId = session.user.technicianId;
+  if (session.user.role === "TECHNICIAN" && !technicianId) {
+    throw new Error("No technician profile linked to your account — ask an admin");
+  }
+
+  const wo = await prisma.workOrder.findUniqueOrThrow({ where: { id } });
+  if (wo.status !== "PENDING") throw new Error("Can only claim PENDING work orders");
+  if (wo.technicianId) throw new Error("Work order already assigned");
+
+  await prisma.workOrder.update({
+    where: { id },
+    data: { technicianId: technicianId ?? null },
+  });
+
+  revalidatePath("/pms");
+}
+
 export async function addWoNote(workOrderId: string, text: string) {
   const session = await getServerSession(authOptions);
   if (!session) throw new Error("Unauthenticated");

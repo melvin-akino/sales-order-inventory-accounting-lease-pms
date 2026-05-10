@@ -54,6 +54,7 @@ export default async function PmsPage() {
       assets={assets.map((a) => ({ id: a.id, name: a.name, serialNumber: a.serialNumber }))}
       technicians={technicians.map((t) => ({ id: t.id, name: t.name, specialization: t.specialization }))}
       role={role}
+      myTechnicianId={session.user.technicianId ?? null}
     />
   );
 }

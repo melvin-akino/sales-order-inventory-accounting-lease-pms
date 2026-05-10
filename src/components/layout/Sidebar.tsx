@@ -18,6 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "portal",    label: "My Portal",      href: "/portal",    icon: "user-circle",   roles: ["CUSTOMER"] },
   { id: "leases",    label: "Leases",         href: "/leases",    icon: "file-text",     roles: ["FINANCE", "ADMIN"] },
   { id: "pms",       label: "PMS / Work Ord", href: "/pms",       icon: "tool",          roles: ["TECHNICIAN", "WAREHOUSE", "ADMIN"] },
+  { id: "equipment", label: "Equipment",      href: "/equipment", icon: "cpu",           roles: ["WAREHOUSE", "ADMIN"] },
   { id: "catalog",   label: "Catalog",        href: "/catalog",   icon: "grid",          roles: ["AGENT", "FINANCE", "ADMIN"] },
   { id: "customers", label: "Customers",      href: "/customers", icon: "users",         roles: ["AGENT", "FINANCE", "ADMIN"] },
   { id: "suppliers", label: "Suppliers",      href: "/suppliers", icon: "briefcase",     roles: ["WAREHOUSE", "FINANCE", "ADMIN"] },
@@ -40,6 +41,7 @@ const ICON_PATHS: Record<string, string> = {
   "user-circle":   "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
   "book-open":     "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",
   "settings":      "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
+  "cpu":           "M18 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3",
   "log-out":       "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
 };
 
