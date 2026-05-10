@@ -11,10 +11,8 @@ export default async function PortalPage() {
 
   const customerId = session.user.customerId;
 
-  const [customer, orders, invoices, leases] = await Promise.all([
-    prisma.customer.findUniqueOrThrow({
-      where: { id: customerId },
-    }),
+  const [customer, orders, invoices, leases, quotations] = await Promise.all([
+    prisma.customer.findUniqueOrThrow({ where: { id: customerId } }),
     prisma.order.findMany({
       where: { customerId },
       orderBy: { createdAt: "desc" },
@@ -46,9 +44,13 @@ export default async function PortalPage() {
         },
       },
     }),
+    prisma.quotation.findMany({
+      where: { customerId, status: { in: ["SENT", "ACCEPTED", "CONVERTED"] } },
+      orderBy: { createdAt: "desc" },
+      include: { lines: { select: { name: true, qty: true, unitPrice: true } } },
+    }),
   ]);
 
-  // Compute credit utilization: sum of open invoice amounts
   const openAR = invoices
     .filter((i) => i.status !== "PAID")
     .reduce((s, i) => s + Number(i.amount) - Number(i.paid), 0);
@@ -110,6 +112,15 @@ export default async function PortalPage() {
               }
             : null,
         })),
+      }))}
+      quotations={quotations.map((q) => ({
+        id: q.id,
+        status: q.status,
+        total: Number(q.total),
+        validUntil: q.validUntil.toISOString(),
+        createdAt: q.createdAt.toISOString(),
+        orderId: q.orderId,
+        lines: q.lines.map(l => ({ name: l.name, qty: l.qty, unitPrice: Number(l.unitPrice) })),
       }))}
     />
   );

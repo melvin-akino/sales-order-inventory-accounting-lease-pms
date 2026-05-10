@@ -35,12 +35,19 @@ interface PortalLease {
   monthlyRate: number; active: boolean; assets: LeaseAsset[];
 }
 
+interface PortalQuote {
+  id: string; status: string; total: number;
+  validUntil: string; createdAt: string; orderId: string | null;
+  lines: { name: string; qty: number; unitPrice: number }[];
+}
+
 interface Props {
   customer: CustomerData;
   openAR: number;
   orders: PortalOrder[];
   invoices: PortalInvoice[];
   leases: PortalLease[];
+  quotations: PortalQuote[];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -82,15 +89,16 @@ function Pill({ bg, fg, label }: { bg: string; fg: string; label: string }) {
 // ── Tab definitions ───────────────────────────────────────────────────────────
 
 const TABS = [
-  ["OVERVIEW",  "Overview"],
-  ["ORDERS",    "My orders"],
-  ["INVOICES",  "Invoices"],
-  ["LEASES",    "Leases & equipment"],
+  ["OVERVIEW",    "Overview"],
+  ["ORDERS",      "My orders"],
+  ["INVOICES",    "Invoices"],
+  ["QUOTATIONS",  "Quotations"],
+  ["LEASES",      "Leases & equipment"],
 ] as const;
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function PortalClient({ customer, openAR, orders, invoices, leases }: Props) {
+export function PortalClient({ customer, openAR, orders, invoices, leases, quotations }: Props) {
   const [tab, setTab]   = useState<typeof TABS[number][0]>("OVERVIEW");
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -142,10 +150,11 @@ export function PortalClient({ customer, openAR, orders, invoices, leases }: Pro
         ))}
       </div>
 
-      {tab === "OVERVIEW"  && <OverviewTab customer={customer} orders={orders} invoices={invoices} leases={leases} openAR={openAR} onTabChange={setTab} />}
-      {tab === "ORDERS"    && <OrdersTab orders={orders} expanded={expanded} onExpand={setExpanded} />}
-      {tab === "INVOICES"  && <InvoicesTab invoices={invoices} />}
-      {tab === "LEASES"    && <LeasesTab leases={leases} />}
+      {tab === "OVERVIEW"    && <OverviewTab customer={customer} orders={orders} invoices={invoices} leases={leases} openAR={openAR} onTabChange={setTab} />}
+      {tab === "ORDERS"      && <OrdersTab orders={orders} expanded={expanded} onExpand={setExpanded} />}
+      {tab === "INVOICES"    && <InvoicesTab invoices={invoices} />}
+      {tab === "QUOTATIONS"  && <QuotationsTab quotations={quotations} />}
+      {tab === "LEASES"      && <LeasesTab leases={leases} />}
     </div>
   );
 }
@@ -532,6 +541,77 @@ function LeasesTab({ leases }: { leases: PortalLease[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── Quotations tab ────────────────────────────────────────────────────────────
+
+const QUOTE_STATUS_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
+  SENT:      { label: "Sent",      bg: "oklch(0.95 0.03 240)", fg: "oklch(0.35 0.10 240)" },
+  ACCEPTED:  { label: "Accepted",  bg: "oklch(0.94 0.04 145)", fg: "oklch(0.32 0.10 145)" },
+  CONVERTED: { label: "Converted", bg: "oklch(0.95 0.03 290)", fg: "oklch(0.36 0.12 290)" },
+  EXPIRED:   { label: "Expired",   bg: "oklch(0.94 0.04 80)",  fg: "oklch(0.32 0.10 80)"  },
+  REJECTED:  { label: "Rejected",  bg: "oklch(0.94 0.05 25)",  fg: "oklch(0.40 0.12 25)"  },
+};
+
+function QuotationsTab({ quotations }: { quotations: PortalQuote[] }) {
+  if (quotations.length === 0) {
+    return (
+      <div className="card" style={{ marginTop: 16 }}>
+        <div className="card-body" style={{ padding: "40px 0", textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
+          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>No quotations</div>
+          <div style={{ fontSize: 13, color: "oklch(var(--ink-3))" }}>Quotations from your sales team will appear here.</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 16 }} className="card">
+      <div className="tbl-wrap">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Quote #</th>
+              <th>Status</th>
+              <th className="num">Total</th>
+              <th>Valid Until</th>
+              <th>Items</th>
+              <th>Linked Order</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {quotations.map(q => {
+              const s = QUOTE_STATUS_STYLE[q.status];
+              const expired = q.status === "SENT" && new Date(q.validUntil) < new Date();
+              return (
+                <tr key={q.id} style={{ cursor: "default" }}>
+                  <td style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 600 }}>{q.id}</td>
+                  <td>
+                    {s ? <Pill bg={s.bg} fg={s.fg} label={expired ? "Expired" : s.label} /> : null}
+                  </td>
+                  <td className="num">{peso(q.total)}</td>
+                  <td style={{ fontSize: 12 }}>
+                    <span style={{ color: expired ? "oklch(0.50 0.14 25)" : "oklch(var(--ink-2))" }}>
+                      {fmtDate(q.validUntil)}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: 12 }}>{q.lines.length} item{q.lines.length !== 1 ? "s" : ""}</td>
+                  <td style={{ fontFamily: "monospace", fontSize: 12 }}>
+                    {q.orderId ?? <span className="dim">—</span>}
+                  </td>
+                  <td>
+                    <a href={`/print/quote/${q.id}`} target="_blank" className="btn btn-ghost btn-sm">View PDF</a>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

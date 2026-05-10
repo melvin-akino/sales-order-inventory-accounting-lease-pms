@@ -8,6 +8,7 @@ import { peso, fmtDate, fmtDateTime } from "@/lib/utils";
 import { NEXT_STATE, STATE_LABEL } from "@/types";
 import type { OrderState } from "@prisma/client";
 import { OrderActions } from "./OrderActions";
+import { Attachments } from "@/components/Attachments";
 
 interface Props { params: { id: string } }
 
@@ -28,7 +29,14 @@ export default async function OrderDetailPage({ params }: Props) {
 
   if (role === "CUSTOMER" && order.customerId !== session!.user.customerId) notFound();
 
+  const attachments = await prisma.attachment.findMany({
+    where: { entityType: "order", entityId: params.id },
+    include: { uploadedBy: { select: { name: true } } },
+    orderBy: { uploadedAt: "desc" },
+  });
+
   const transition = NEXT_STATE[order.state as OrderState];
+  const canManage = ["AGENT", "FINANCE", "WAREHOUSE", "ADMIN"].includes(role);
 
   return (
     <div className="max-w-[900px]">
@@ -100,6 +108,28 @@ export default async function OrderDetailPage({ params }: Props) {
                   <span>{peso(order.total)}</span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Attachments */}
+          <div className="card">
+            <div className="card-head"><span className="card-h">Attachments</span></div>
+            <div className="card-body">
+              <Attachments
+                entityType="order"
+                entityId={order.id}
+                attachments={attachments.map(a => ({
+                  id: a.id,
+                  originalName: a.originalName,
+                  fileSize: a.fileSize,
+                  mimeType: a.mimeType,
+                  url: a.url,
+                  uploadedAt: a.uploadedAt.toISOString(),
+                  uploadedBy: a.uploadedBy,
+                }))}
+                canUpload={canManage}
+                canDelete={["ADMIN", "FINANCE"].includes(role)}
+              />
             </div>
           </div>
 
