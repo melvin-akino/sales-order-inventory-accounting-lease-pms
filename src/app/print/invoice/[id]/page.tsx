@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
+import { PrintLetterhead } from "@/components/print/PrintLetterhead";
 
 export const dynamic = "force-dynamic";
 
@@ -52,19 +53,7 @@ export default async function PrintInvoicePage({ params }: { params: { id: strin
 
       <FloatingPrintButton backHref="/ledger" />
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 36 }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 22, letterSpacing: "-0.02em", color: "#111" }}>INVOICE</div>
-          <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>{invoice.id}</div>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>SAMPLE COMPANY INC.</div>
-          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>123 Business Ave., Pasig City</div>
-          <div style={{ fontSize: 12, color: "#6b7280" }}>TIN: 123-456-789-000</div>
-          <div style={{ fontSize: 12, color: "#6b7280" }}>VAT Reg.No. 123-456-789-000</div>
-        </div>
-      </div>
+      <PrintLetterhead docTitle="Invoice" docSub={invoice.id} />
 
       {/* Meta grid */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 28 }}>

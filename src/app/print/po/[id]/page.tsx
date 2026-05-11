@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
+import { PrintLetterhead } from "@/components/print/PrintLetterhead";
 
 export const dynamic = "force-dynamic";
 
@@ -49,17 +50,7 @@ export default async function PrintPoPage({ params }: { params: { id: string } }
 
       <FloatingPrintButton backHref="/inbound" />
 
-      {/* Header stripe */}
-      <div style={{ background: "#064e3b", color: "white", padding: "14px 20px", borderRadius: "6px 6px 0 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-0.01em" }}>PURCHASE ORDER</div>
-          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 2 }}>{po.id}</div>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>SAMPLE COMPANY INC.</div>
-          <div style={{ fontSize: 11.5, opacity: 0.8 }}>123 Business Ave., Pasig City · TIN: 123-456-789-000</div>
-        </div>
-      </div>
+      <PrintLetterhead docTitle="Purchase Order" docSub={po.id} dark />
 
       {/* Info grid */}
       <div style={{ border: "1px solid #d1d5db", borderTop: 0, padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { computeTrialBalance, COA_BY_CODE } from "@/lib/coa";
 import { PrintButton } from "../PrintButton";
+import { brand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -119,8 +120,8 @@ export default async function PrintFinancialsPage() {
 
       {/* Company Header */}
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontWeight: 800, fontSize: 17, letterSpacing: 0.5 }}>SAMPLE COMPANY INC.</div>
-        <div style={{ fontSize: 11.5, color: "#555" }}>TIN: 123-456-789-000 | Pasig City, Metro Manila</div>
+        <div style={{ fontWeight: 800, fontSize: 17, letterSpacing: 0.5, color: brand.color }}>{brand.name}</div>
+        <div style={{ fontSize: 11.5, color: "#555" }}>TIN: {brand.tin} · {brand.address}</div>
       </div>
 
       {/* ── INCOME STATEMENT ─────────────────────────────────── */}

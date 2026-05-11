@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
+import { PrintLetterhead } from "@/components/print/PrintLetterhead";
+import { brand } from "@/lib/brand";
 
 interface Props { params: { id: string } }
 
@@ -45,26 +47,11 @@ export default async function PrintOrderPage({ params }: Props) {
       {/* Document */}
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "48px 48px 64px", background: "white" }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 40 }}>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#111", letterSpacing: "-0.02em" }}>
-              {process.env.NEXT_PUBLIC_APP_ORG ?? "MediSupply PH"}
-            </div>
-            <div style={{ fontSize: 12.5, color: "#6b7280", marginTop: 4 }}>Medical Equipment &amp; Supplies</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#374151", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Order Confirmation
-            </div>
-            <div style={{ fontSize: 11.5, color: "#9ca3af", marginTop: 2 }}>
-              Printed: {now.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })}
-            </div>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div style={{ borderTop: "2px solid #111", marginBottom: 24 }} />
+        <PrintLetterhead
+          docTitle="Order Confirmation"
+          docSub={`Printed: ${now.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })}`}
+        />
+        <div style={{ borderTop: `2px solid ${brand.color}`, marginBottom: 24 }} />
 
         {/* Order meta */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32 }}>
@@ -196,7 +183,7 @@ export default async function PrintOrderPage({ params }: Props) {
 
         {/* Footer */}
         <div style={{ marginTop: 40, paddingTop: 20, borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "#9ca3af" }}>
-          <span>{process.env.NEXT_PUBLIC_APP_ORG ?? "MediSupply PH"} · Official Order Confirmation</span>
+          <span>{brand.name} · Official Order Confirmation</span>
           <span>{order.warehouse.name}</span>
         </div>
       </div>

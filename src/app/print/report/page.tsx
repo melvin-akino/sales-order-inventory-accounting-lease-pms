@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { computeTrialBalance, COA } from "@/lib/coa";
 import { PrintButton } from "../PrintButton";
 import type { ReportType } from "@/app/(dashboard)/reports/page";
+import { brand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -227,7 +228,8 @@ export default async function PrintReportPage({ searchParams }: Props) {
       <PrintButton backHref={`/reports?type=${type}&from=${fromDate}&to=${toDate}`} backLabel="Back to Reports" />
 
       <div style={{ textAlign: "center", marginBottom: 24 }}>
-        <div style={{ fontWeight: 800, fontSize: 16 }}>SAMPLE COMPANY INC.</div>
+        <div style={{ fontWeight: 800, fontSize: 16, color: brand.color }}>{brand.name}</div>
+        <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>{brand.tagline} · {brand.address}</div>
         <div style={{ fontWeight: 700, fontSize: 14, marginTop: 6 }}>{title}</div>
         {(type === "SALES" || type === "PO_SUMMARY" || type === "PL") && (
           <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>Period: {fromDate} to {toDate}</div>

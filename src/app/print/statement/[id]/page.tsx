@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
+import { brand } from "@/lib/brand";
 
 interface Props { params: { id: string } }
 
@@ -25,7 +26,6 @@ export default async function StatementPage({ params }: Props) {
   });
   if (!customer) notFound();
 
-  const org = process.env.NEXT_PUBLIC_ORG ?? "MediSupply";
   const today = new Date();
 
   // Build statement rows: each invoice creates a debit, each non-zero payment creates a credit
@@ -80,8 +80,11 @@ export default async function StatementPage({ params }: Props) {
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, borderBottom: "2px solid #111", paddingBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em" }}>{org}</div>
-            <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>STATEMENT OF ACCOUNT</div>
+            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: brand.color }}>{brand.name}</div>
+            <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{brand.tagline}</div>
+            <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{brand.address}</div>
+            <div style={{ fontSize: 11, color: "#888" }}>{brand.phone} · {brand.email}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#374151", marginTop: 6, letterSpacing: "0.05em" }}>STATEMENT OF ACCOUNT</div>
           </div>
           <div style={{ textAlign: "right", fontSize: 12, color: "#555" }}>
             <div>Date: {fmtDate(today)}</div>

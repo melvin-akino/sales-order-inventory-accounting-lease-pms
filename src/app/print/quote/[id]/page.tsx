@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
+import { brand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,6 @@ export default async function PrintQuotePage({ params }: { params: { id: string 
   const vat = Number(quote.vat);
   const cwt = Number(quote.cwt);
   const total = Number(quote.total);
-  const appOrg = process.env.NEXT_PUBLIC_APP_ORG ?? "MediSupply PH";
 
   return (
     <html lang="en">
@@ -51,23 +51,23 @@ export default async function PrintQuotePage({ params }: { params: { id: string 
           }
           .page { max-width: 800px; margin: 0 auto; padding: 32px; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
-          .company { font-size: 20px; font-weight: 700; color: #003087; letter-spacing: -0.5px; }
+          .company { font-size: 20px; font-weight: 700; color: ${brand.color}; letter-spacing: -0.5px; }
           .doc-title { text-align: right; }
-          .doc-title h1 { font-size: 22px; font-weight: 700; color: #003087; }
+          .doc-title h1 { font-size: 22px; font-weight: 700; color: ${brand.color}; }
           .doc-title .doc-no { font-size: 13px; font-family: monospace; color: #374151; margin-top: 2px; }
-          .stripe { height: 5px; background: #003087; margin-bottom: 24px; border-radius: 2px; }
+          .stripe { height: 5px; background: ${brand.color}; margin-bottom: 24px; border-radius: 2px; }
           .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
           .meta-block h4 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; margin-bottom: 6px; }
           .meta-block p { font-size: 12px; color: #111; line-height: 1.6; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th { background: #003087; color: #fff; padding: 8px 10px; font-size: 11px; font-weight: 600; text-align: left; }
+          th { background: ${brand.color}; color: #fff; padding: 8px 10px; font-size: 11px; font-weight: 600; text-align: left; }
           th.num, td.num { text-align: right; }
           td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
           tr:last-child td { border-bottom: none; }
           tr:nth-child(even) td { background: #f9fafb; }
           .totals { margin-left: auto; width: 280px; }
           .total-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; color: #374151; }
-          .total-row.grand { border-top: 2px solid #003087; margin-top: 4px; padding-top: 8px; font-size: 14px; font-weight: 700; color: #003087; }
+          .total-row.grand { border-top: 2px solid ${brand.color}; margin-top: 4px; padding-top: 8px; font-size: 14px; font-weight: 700; color: ${brand.color}; }
           .validity { margin: 20px 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb; font-size: 12px; color: #374151; }
           .notes { margin: 16px 0; font-size: 12px; color: #374151; }
           .status-pill { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; }
@@ -82,8 +82,11 @@ export default async function PrintQuotePage({ params }: { params: { id: string 
         <div className="page">
           <div className="header">
             <div>
-              <div className="company">{appOrg}</div>
-              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Quotation / Proforma Invoice</div>
+              <div className="company">{brand.name}</div>
+              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{brand.tagline}</div>
+              <div style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 2, lineHeight: 1.5 }}>
+                {brand.address}<br />{brand.phone} · {brand.email}
+              </div>
             </div>
             <div className="doc-title">
               <h1>QUOTATION</h1>
@@ -180,7 +183,7 @@ export default async function PrintQuotePage({ params }: { params: { id: string 
           </div>
 
           <div className="footer">
-            This is a computer-generated document. {appOrg} · {process.env.NEXTAUTH_URL ?? ""}
+            This is a computer-generated document. {brand.name} · {brand.website}
           </div>
         </div>
       </body>

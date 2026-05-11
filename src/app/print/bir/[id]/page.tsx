@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PrintButton } from "../../PrintButton";
+import { brand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -87,14 +88,14 @@ export default async function PrintBirPage({ params }: { params: { id: string } 
 
           <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 0.4, color: "#444", marginBottom: 8, textTransform: "uppercase" }}>Taxpayer Information</div>
           <BoxRow>
-            <LabeledField label="Registered Name" value="SAMPLE COMPANY INC." wide />
-            <LabeledField label="TIN" value="123-456-789-000" />
-            <LabeledField label="RDO Code" value="044" />
+            <LabeledField label="Registered Name" value={brand.name} wide />
+            <LabeledField label="TIN" value={brand.tin} />
+            <LabeledField label="RDO Code" value={process.env.NEXT_PUBLIC_ORG_RDO ?? "044"} />
           </BoxRow>
           <BoxRow>
-            <LabeledField label="Registered Address" value="123 Business Ave., Pasig City, Metro Manila" wide />
-            <LabeledField label="Zip Code" value="1600" />
-            <LabeledField label="Contact Number" value="+63 2 8123 4567" />
+            <LabeledField label="Registered Address" value={brand.address} wide />
+            <LabeledField label="Zip Code" value={process.env.NEXT_PUBLIC_ORG_ZIP ?? "1550"} />
+            <LabeledField label="Contact Number" value={brand.phone} />
           </BoxRow>
 
           <div style={{ borderTop: "1px solid #ccc", margin: "10px 0" }} />

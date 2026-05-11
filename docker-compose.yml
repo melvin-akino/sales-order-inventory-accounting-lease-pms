@@ -59,6 +59,16 @@ services:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
       NEXT_PUBLIC_APP_NAME: "Vital Sign · Ops"
       NEXT_PUBLIC_APP_ORG: "MediSupply PH"
+      NEXT_PUBLIC_ORG_NAME: "MediSupply PH"
+      NEXT_PUBLIC_ORG_TAGLINE: "Medical Equipment & Supplies"
+      NEXT_PUBLIC_ORG_ADDRESS: "3F Greenfield Tower, Mandaluyong City, Metro Manila 1550"
+      NEXT_PUBLIC_ORG_PHONE: "+63 2 8123 4567"
+      NEXT_PUBLIC_ORG_EMAIL: "info@medisupply.ph"
+      NEXT_PUBLIC_ORG_TIN: "123-456-789-000"
+      NEXT_PUBLIC_ORG_WEBSITE: "www.medisupply.ph"
+      NEXT_PUBLIC_ORG_COLOR: "#003087"
+      NEXT_PUBLIC_ORG_RDO: "044"
+      NEXT_PUBLIC_ORG_ZIP: "1550"
     depends_on:
       migrate:
         condition: service_completed_successfully

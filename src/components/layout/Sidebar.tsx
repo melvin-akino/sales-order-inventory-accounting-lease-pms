@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useMobileNav } from "@/components/layout/NavContext";
 import type { NavItem } from "@/types";
 import type { Role } from "@prisma/client";
+import { brand } from "@/lib/brand";
 
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Dashboard",      href: "/dashboard", icon: "home",          roles: ["AGENT", "FINANCE", "WAREHOUSE", "TECHNICIAN", "DRIVER", "ADMIN"] },
@@ -95,14 +96,16 @@ export function Sidebar() {
       )}
       <aside className="sidebar" data-mobile-open={open ? "true" : "false"}>
       <div className="sidebar-brand">
-        <div className="sidebar-logo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+        <div className="sidebar-logo" style={{ background: brand.color }}>
+          {/* Medical cross mark */}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M12 2v20M2 12h20" />
           </svg>
         </div>
-        <span className="sidebar-org">
-          {process.env.NEXT_PUBLIC_ORG ?? "MediSupply"}
-        </span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <span className="sidebar-org">{brand.name}</span>
+          <span style={{ fontSize: 10, color: "oklch(var(--ink-4))", lineHeight: 1 }}>{brand.tagline}</span>
+        </div>
         <button
           onClick={close}
           className="sidebar-signout ml-auto"

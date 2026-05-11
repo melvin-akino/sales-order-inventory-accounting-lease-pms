@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { brand } from "@/lib/brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,15 +35,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-bg p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-accent mb-4">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-ink">
-              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4"
+               style={{ background: brand.color }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 2v20M2 12h20" />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-ink">
-            {process.env.NEXT_PUBLIC_ORG ?? "MediSupply"}
-          </h1>
-          <p className="text-sm text-ink-3 mt-1">Sign in to your account</p>
+          <h1 className="text-xl font-semibold text-ink">{brand.name}</h1>
+          <p className="text-sm text-ink-3 mt-1">{brand.tagline}</p>
+          <p className="text-xs mt-3" style={{ color: "oklch(var(--ink-4))" }}>Sign in to your account</p>
         </div>
 
         <div className="card">
@@ -91,7 +92,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-ink-4 mt-6">
-          {process.env.NEXT_PUBLIC_APP_NAME ?? "MediSupply PMS"} · Internal use only
+          {brand.name} · {brand.website} · Internal use only
         </p>
       </div>
     </div>
