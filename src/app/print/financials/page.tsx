@@ -40,13 +40,23 @@ function Divider() {
   return <tr><td colSpan={2} style={{ borderTop: "1px solid #bbb", padding: 0 }} /></tr>;
 }
 
-export default async function PrintFinancialsPage() {
+interface Props { searchParams: { from?: string; to?: string } }
+
+export default async function PrintFinancialsPage({ searchParams }: Props) {
   const session = await getServerSession(authOptions);
   if (!session || !["FINANCE", "ADMIN"].includes(session.user.role)) redirect("/orders");
 
   const brand = await getOrgSettings();
 
-  const journalEntries = await prisma.journalEntry.findMany({ include: { lines: true } });
+  const fromDate = searchParams.from ? new Date(searchParams.from + "T00:00:00") : undefined;
+  const toDate   = searchParams.to   ? new Date(searchParams.to   + "T23:59:59") : undefined;
+
+  const journalEntries = await prisma.journalEntry.findMany({
+    where: {
+      ...(fromDate || toDate ? { date: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) } } : {}),
+    },
+    include: { lines: true },
+  });
 
   const allLines = journalEntries.flatMap((je) =>
     je.lines.map((l) => ({ code: l.code, dr: Number(l.dr), cr: Number(l.cr) }))
@@ -112,7 +122,12 @@ export default async function PrintFinancialsPage() {
   const totalLiabEquity = totalLiabilities + totalEquity;
 
   const today = new Date().toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
-  const periodEnd = today;
+  const fmt = (d: Date) => d.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
+  const periodLabel = fromDate && toDate
+    ? `${fmt(fromDate)} to ${fmt(toDate)}`
+    : fromDate ? `From ${fmt(fromDate)}`
+    : toDate   ? `Up to ${fmt(toDate)}`
+    : "All periods";
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", maxWidth: 760, margin: "0 auto", padding: "24px 32px", color: "#111" }}>
@@ -130,7 +145,7 @@ export default async function PrintFinancialsPage() {
       <div style={{ marginBottom: 32 }}>
         <div style={{ textAlign: "center", marginBottom: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>INCOME STATEMENT</div>
-          <div style={{ fontSize: 11.5, color: "#555" }}>For the Period Ended {periodEnd}</div>
+          <div style={{ fontSize: 11.5, color: "#555" }}>For the Period Ended {periodLabel}</div>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <tbody>
@@ -176,7 +191,7 @@ export default async function PrintFinancialsPage() {
       <div>
         <div style={{ textAlign: "center", marginBottom: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>BALANCE SHEET</div>
-          <div style={{ fontSize: 11.5, color: "#555" }}>As of {periodEnd}</div>
+          <div style={{ fontSize: 11.5, color: "#555" }}>As of {toDate ? fmt(toDate) : today}</div>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <tbody>

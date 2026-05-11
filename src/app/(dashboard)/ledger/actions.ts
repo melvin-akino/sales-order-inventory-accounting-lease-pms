@@ -240,3 +240,97 @@ export async function generateInvoiceFromOrder(
     return { error: "Failed to generate invoice." };
   }
 }
+
+// ── Create BIR Filing ─────────────────────────────────────────────────────────
+
+const BIR_FORMS = ["2550M", "2550Q", "1601C", "1601EQ", "1702RT"] as const;
+type BirFormType = typeof BIR_FORMS[number];
+
+function birDueDate(form: BirFormType, periodTo: Date): Date {
+  const y = periodTo.getFullYear();
+  const m = periodTo.getMonth(); // 0-indexed
+  switch (form) {
+    case "2550M":   return new Date(y, m + 1, 20); // 20th of following month
+    case "2550Q":   return new Date(y, m + 1, 25); // 25th of month after quarter end
+    case "1601C":   return new Date(y, m + 1, 10); // 10th of following month
+    case "1601EQ":  return new Date(y, m + 1, 30); // last of month after quarter end
+    case "1702RT":  return new Date(y + 1, 3, 15); // Apr 15 of following year
+  }
+}
+
+function birDesc(form: BirFormType, period: string): string {
+  const labels: Record<BirFormType, string> = {
+    "2550M":  "Monthly VAT Declaration",
+    "2550Q":  "Quarterly VAT Return",
+    "1601C":  "Monthly Withholding (Compensation)",
+    "1601EQ": "Quarterly Withholding (Expanded)",
+    "1702RT": "Annual Corporate Income Tax Return",
+  };
+  return `${labels[form]} — ${period}`;
+}
+
+export async function createBirFiling(input: {
+  form: string;
+  periodFrom: string;
+  periodTo: string;
+  amount: number;
+}): Promise<{ error?: string }> {
+  const session = await getServerSession(authOptions);
+  if (!session || !["FINANCE", "ADMIN"].includes(session.user.role)) redirect("/orders");
+
+  const form = input.form as BirFormType;
+  if (!BIR_FORMS.includes(form)) return { error: "Invalid form type" };
+
+  const from = new Date(input.periodFrom + "T00:00:00");
+  const to   = new Date(input.periodTo   + "T23:59:59");
+
+  // Auto-compute tax amount from journal entries if not overridden
+  let amount = input.amount;
+  if (amount <= 0) {
+    const entries = await prisma.journalEntry.findMany({
+      where: { date: { gte: from, lte: to } },
+      include: { lines: true },
+    });
+    const allLines = entries.flatMap(e => e.lines);
+
+    if (form === "2550M" || form === "2550Q") {
+      const outputVat = allLines.filter(l => l.code === "2100").reduce((s, l) => s + Number(l.cr) - Number(l.dr), 0);
+      const inputVat  = allLines.filter(l => l.code === "2110").reduce((s, l) => s + Number(l.dr) - Number(l.cr), 0);
+      amount = Math.max(0, outputVat - inputVat);
+    } else if (form === "1601C") {
+      amount = allLines.filter(l => l.code === "2160").reduce((s, l) => s + Number(l.cr) - Number(l.dr), 0);
+    } else if (form === "1601EQ") {
+      amount = allLines.filter(l => l.code === "2150").reduce((s, l) => s + Number(l.cr) - Number(l.dr), 0);
+    } else if (form === "1702RT") {
+      const revenue  = allLines.filter(l => l.code.startsWith("4")).reduce((s, l) => s + Number(l.cr) - Number(l.dr), 0);
+      const expenses = allLines.filter(l => l.code.startsWith("5")).reduce((s, l) => s + Number(l.dr) - Number(l.cr), 0);
+      amount = Math.max(0, (revenue - expenses) * 0.25);
+    }
+  }
+
+  const period = `${input.periodFrom} to ${input.periodTo}`;
+  const id = `BIR-${input.periodFrom.slice(0,7)}-${form}`;
+
+  // If a filing for this id already exists, suffix it
+  const existing = await prisma.birFiling.findFirst({ where: { id: { startsWith: id } } });
+  const finalId = existing ? `${id}-${Date.now()}` : id;
+
+  try {
+    await prisma.birFiling.create({
+      data: {
+        id:     finalId,
+        form,
+        period,
+        desc:   birDesc(form, period),
+        due:    birDueDate(form, to),
+        amount,
+        status: "PENDING",
+      },
+    });
+    revalidatePath("/ledger");
+    return {};
+  } catch (e) {
+    console.error(e);
+    return { error: "Failed to create BIR filing." };
+  }
+}

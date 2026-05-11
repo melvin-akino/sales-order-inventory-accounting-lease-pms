@@ -11,6 +11,7 @@ import {
   recordInvoicePayment,
   recordBillPayment,
   markBirFiled,
+  createBirFiling,
 } from "./actions";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -47,7 +48,9 @@ type ModalState =
   | { type: "JE" }
   | { type: "PAY_INV"; invoice: InvoiceData }
   | { type: "PAY_BILL"; bill: BillData }
-  | { type: "BIR"; filing: BirFilingData };
+  | { type: "BIR"; filing: BirFilingData }
+  | { type: "PRINT_FINANCIALS" }
+  | { type: "CREATE_BIR" };
 
 // ── Source chip ───────────────────────────────────────────────────────────────
 
@@ -364,6 +367,126 @@ function BirModal({ filing, onClose }: { filing: BirFilingData; onClose: () => v
   );
 }
 
+// ── Print Financials date-picker modal ───────────────────────────────────────
+
+function PrintFinancialsModal({ onClose }: { onClose: () => void }) {
+  const thisYear = new Date().getFullYear();
+  const [from, setFrom] = useState(`${thisYear}-01-01`);
+  const [to,   setTo  ] = useState(new Date().toISOString().slice(0, 10));
+
+  const inp: React.CSSProperties = { border: "1px solid oklch(var(--line))", borderRadius: 5, padding: "8px 10px", fontSize: 13, background: "oklch(var(--bg))", color: "oklch(var(--ink))", width: "100%" };
+
+  return (
+    <ModalBox title="Print Financial Statements" onClose={onClose}>
+      <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+        <p style={{ fontSize: 13, color: "oklch(var(--ink-2))", margin: 0 }}>
+          Select the date range for the Income Statement and Balance Sheet. Leave as-is for year-to-date.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11.5, marginBottom: 5, color: "oklch(var(--ink-3))" }}>From</div>
+            <input type="date" style={inp} value={from} onChange={e => setFrom(e.target.value)} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11.5, marginBottom: 5, color: "oklch(var(--ink-3))" }}>To</div>
+            <input type="date" style={inp} value={to} onChange={e => setTo(e.target.value)} />
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: "14px 20px", borderTop: "1px solid oklch(var(--line))", display: "flex", gap: 10, justifyContent: "flex-end", flexShrink: 0 }}>
+        <button className="btn" onClick={onClose}>Cancel</button>
+        <a
+          href={`/print/financials?from=${from}&to=${to}`}
+          target="_blank"
+          rel="noreferrer"
+          className="btn btn-primary"
+          onClick={onClose}
+        >
+          Open PDF ↗
+        </a>
+      </div>
+    </ModalBox>
+  );
+}
+
+// ── Create BIR Filing modal ───────────────────────────────────────────────────
+
+const BIR_FORM_OPTS = [
+  { value: "2550M",  label: "2550M — Monthly VAT Declaration" },
+  { value: "2550Q",  label: "2550Q — Quarterly VAT Return" },
+  { value: "1601C",  label: "1601-C — Monthly Withholding (Compensation)" },
+  { value: "1601EQ", label: "1601-EQ — Quarterly Withholding (Expanded)" },
+  { value: "1702RT", label: "1702-RT — Annual Corporate Income Tax" },
+];
+
+function CreateBirModal({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [form,   setForm  ] = useState("2550M");
+  const [from,   setFrom  ] = useState("");
+  const [to,     setTo    ] = useState("");
+  const [amount, setAmount] = useState("");
+  const [err,    setErr   ] = useState("");
+
+  const inp: React.CSSProperties = { border: "1px solid oklch(var(--line))", borderRadius: 5, padding: "8px 10px", fontSize: 13, background: "oklch(var(--bg))", color: "oklch(var(--ink))", width: "100%" };
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr("");
+    if (!from || !to) { setErr("Period dates are required."); return; }
+    startTransition(async () => {
+      const res = await createBirFiling({
+        form,
+        periodFrom: from,
+        periodTo:   to,
+        amount:     amount ? parseFloat(amount) : 0,
+      });
+      if (res.error) { setErr(res.error); return; }
+      router.refresh();
+      onClose();
+    });
+  }
+
+  return (
+    <ModalBox title="Schedule BIR Filing" onClose={onClose}>
+      <form onSubmit={submit}>
+        <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+          <p style={{ fontSize: 13, color: "oklch(var(--ink-2))", margin: 0 }}>
+            Tax amount will be auto-computed from journal entries in the period if left blank.
+          </p>
+          <div>
+            <div style={{ fontSize: 11.5, marginBottom: 5, color: "oklch(var(--ink-3))" }}>Form type *</div>
+            <select style={inp} value={form} onChange={e => setForm(e.target.value)}>
+              {BIR_FORM_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11.5, marginBottom: 5, color: "oklch(var(--ink-3))" }}>Period from *</div>
+              <input type="date" style={inp} value={from} onChange={e => setFrom(e.target.value)} required />
+            </div>
+            <div>
+              <div style={{ fontSize: 11.5, marginBottom: 5, color: "oklch(var(--ink-3))" }}>Period to *</div>
+              <input type="date" style={inp} value={to} onChange={e => setTo(e.target.value)} required />
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11.5, marginBottom: 5, color: "oklch(var(--ink-3))" }}>Tax amount (leave blank to auto-compute)</div>
+            <input type="number" step="0.01" min="0" style={inp} value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 12500.00" />
+          </div>
+          {err && <div style={{ padding: "10px 14px", borderRadius: 6, background: "oklch(0.95 0.05 25)", color: "oklch(0.40 0.14 25)", fontSize: 13 }}>{err}</div>}
+        </div>
+        <div style={{ padding: "14px 20px", borderTop: "1px solid oklch(var(--line))", display: "flex", gap: 10, justifyContent: "flex-end", flexShrink: 0 }}>
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={pending}>
+            {pending ? "Scheduling…" : "Schedule Filing"}
+          </button>
+        </div>
+      </form>
+    </ModalBox>
+  );
+}
+
 // ── Main client ───────────────────────────────────────────────────────────────
 
 const TABS = [
@@ -415,6 +538,16 @@ export function AccountingClient({ journalEntries, invoices, bills, birFilings, 
           <BirModal filing={modal.filing} onClose={() => setModal(null)} />
         </ModalBackdrop>
       )}
+      {modal?.type === "PRINT_FINANCIALS" && (
+        <ModalBackdrop onClose={() => setModal(null)}>
+          <PrintFinancialsModal onClose={() => setModal(null)} />
+        </ModalBackdrop>
+      )}
+      {modal?.type === "CREATE_BIR" && (
+        <ModalBackdrop onClose={() => setModal(null)}>
+          <CreateBirModal onClose={() => setModal(null)} />
+        </ModalBackdrop>
+      )}
 
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -431,10 +564,10 @@ export function AccountingClient({ journalEntries, invoices, bills, birFilings, 
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export GL
           </a>
-          <a href="/print/financials" target="_blank" className="btn btn-sm">
+          <button className="btn btn-sm" onClick={() => setModal({ type: "PRINT_FINANCIALS" })}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
             Print Financials
-          </a>
+          </button>
           <button className="btn btn-primary btn-sm" onClick={() => setModal({ type: "JE" })}>+ New journal entry</button>
         </div>
       </div>
@@ -452,7 +585,7 @@ export function AccountingClient({ journalEntries, invoices, bills, birFilings, 
       {tab === "AP"         && <PayablesTab bills={bills} onPayBill={(b) => setModal({ type: "PAY_BILL", bill: b })} />}
       {tab === "TRIAL"      && <TrialBalanceTab tb={trialBalance} />}
       {tab === "STATEMENTS" && <StatementsTab tb={trialBalance} />}
-      {tab === "BIR"        && <BirTab filings={birFilings} onFile={(f) => setModal({ type: "BIR", filing: f })} />}
+      {tab === "BIR"        && <BirTab filings={birFilings} onFile={(f) => setModal({ type: "BIR", filing: f })} onSchedule={() => setModal({ type: "CREATE_BIR" })} />}
     </div>
   );
 }
@@ -831,6 +964,10 @@ function ReceivablesTab({ invoices, onPayInv }: { invoices: InvoiceData[]; onPay
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input placeholder="Invoice, customer, or SO…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        <a href="/api/export/receivables" className="btn btn-sm ml-auto">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </a>
       </div>
 
       <div className="tbl-wrap">
@@ -1188,11 +1325,18 @@ function StmtRow({ label, value, indent, subtotal, total }: { label: string; val
 
 // ── BIR Filings ───────────────────────────────────────────────────────────────
 
-function BirTab({ filings, onFile }: { filings: BirFilingData[]; onFile: (f: BirFilingData) => void }) {
+function BirTab({ filings, onFile, onSchedule }: { filings: BirFilingData[]; onFile: (f: BirFilingData) => void; onSchedule: () => void }) {
   const birDue = filings.filter((f) => f.status === "DUE");
 
   return (
     <div>
+      <div className="filters mb-4">
+        <span style={{ fontSize: 13, color: "oklch(var(--ink-2))" }}>{filings.length} filing{filings.length !== 1 ? "s" : ""}</span>
+        <div className="ml-auto flex gap-2">
+          <a className="btn btn-sm" href="https://efps.bir.gov.ph" target="_blank" rel="noreferrer">Open eFPS ↗</a>
+          <button className="btn btn-primary btn-sm" onClick={onSchedule}>+ Schedule Filing</button>
+        </div>
+      </div>
       {birDue.length > 0 && (
         <div className="callout mb-4">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -1200,7 +1344,6 @@ function BirTab({ filings, onFile }: { filings: BirFilingData[]; onFile: (f: Bir
             <div style={{ fontWeight: 500, fontSize: 13 }}>{birDue.length} BIR filing{birDue.length > 1 ? "s" : ""} need attention this period</div>
             <div style={{ fontSize: 12, marginTop: 1, opacity: 0.8 }}>Returns are prepared from posted entries — review and e-file via eFPS.</div>
           </div>
-          <a className="btn btn-sm ml-auto" href="https://efps.bir.gov.ph" target="_blank" rel="noreferrer">Open eFPS ↗</a>
         </div>
       )}
 
