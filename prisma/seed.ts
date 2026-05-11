@@ -82,13 +82,19 @@ async function main() {
   const catMap = Object.fromEntries(catalog.map((c) => [c.sku, c]));
 
   // ── Stock ─────────────────────────────────────────────────────────────────
-  const consumables = catalog.filter((c) => c.category === "CONSUMABLE" || c.category === "ACCESSORY");
-  for (const item of consumables) {
+  for (const item of catalog) {
+    const isEquipment = item.category === "EQUIPMENT";
     for (const wh of [mnl, ceb]) {
       await prisma.stock.upsert({
         where: { skuId_warehouseId: { skuId: item.id, warehouseId: wh.id } },
         update: {},
-        create: { skuId: item.id, warehouseId: wh.id, onHand: 500 + Math.floor(Math.random() * 1000), reserved: 20, reorderAt: 50 },
+        create: {
+          skuId: item.id,
+          warehouseId: wh.id,
+          onHand: isEquipment ? 15 : 1500,
+          reserved: 0,
+          reorderAt: isEquipment ? 2 : 100,
+        },
       });
     }
   }
@@ -196,7 +202,7 @@ async function main() {
     }
   }
 
-  await upsertOrder("SO-2026-0418", customers[0].id, mnl.id, "PENDING",   false, [{ sku: "CON-IV-018",  qty: 1000, unitPrice: 78 },   { sku: "CON-SY-10",   qty: 2000, unitPrice: 14.5 }]);
+  await upsertOrder("SO-2026-0418", customers[0].id, mnl.id, "PENDING",   false, [{ sku: "CON-IV-018",  qty: 200,  unitPrice: 78 },   { sku: "CON-SY-10",   qty: 500,  unitPrice: 14.5 }]);
   await upsertOrder("SO-2026-0417", customers[1].id, mnl.id, "APPROVED",  false, [{ sku: "CON-GLV-M",  qty: 200,  unitPrice: 365 },  { sku: "CON-MSK-N95", qty: 500,  unitPrice: 38  }]);
   await upsertOrder("SO-2026-0416", customers[2].id, ceb.id, "PREPARING", false, [{ sku: "CON-BAG-1L", qty: 300,  unitPrice: 64 }]);
   await upsertOrder("SO-2026-0415", customers[3].id, mnl.id, "SHIPPED",   false, [{ sku: "EQP-MON-BP", qty: 10,   unitPrice: 1850 }]);
