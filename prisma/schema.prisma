@@ -715,6 +715,24 @@ model Lot {
   @@map("lots")
 }
 
+// ─── Organisation Settings ────────────────────────────────────────────────────
+
+model OrgSettings {
+  id      String @id @default("singleton")
+  name    String
+  tagline String
+  address String
+  phone   String
+  email   String
+  tin     String
+  website String
+  color   String
+  rdo     String @default("")
+  zip     String @default("")
+
+  @@map("org_settings")
+}
+
 // ─── File Attachments ─────────────────────────────────────────────────────────
 
 model Attachment {

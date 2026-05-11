@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
-import { brand } from "@/lib/brand";
+import { getOrgSettings } from "@/lib/org-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +19,8 @@ const STATUS_LABEL: Record<string, string> = {
 export default async function PrintQuotePage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+
+  const brand = await getOrgSettings();
 
   const quote = await prisma.quotation.findUnique({
     where: { id: params.id },

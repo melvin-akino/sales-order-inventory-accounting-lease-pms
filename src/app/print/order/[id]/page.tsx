@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
 import { PrintLetterhead } from "@/components/print/PrintLetterhead";
-import { brand } from "@/lib/brand";
+import { getOrgSettings } from "@/lib/org-settings";
 
 interface Props { params: { id: string } }
 
@@ -15,6 +15,8 @@ function peso(n: number | string) {
 export default async function PrintOrderPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+
+  const brand = await getOrgSettings();
 
   const order = await prisma.order.findUnique({
     where: { id: params.id },
@@ -48,6 +50,7 @@ export default async function PrintOrderPage({ params }: Props) {
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "48px 48px 64px", background: "white" }}>
 
         <PrintLetterhead
+          brand={brand}
           docTitle="Order Confirmation"
           docSub={`Printed: ${now.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })}`}
         />

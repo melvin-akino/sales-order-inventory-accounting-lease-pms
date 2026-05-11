@@ -3,12 +3,13 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SettingsClient } from "./SettingsClient";
+import { getOrgSettings } from "@/lib/org-settings";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "ADMIN") redirect("/orders");
 
-  const [users, customers, technicians] = await Promise.all([
+  const [users, customers, technicians, branding] = await Promise.all([
     prisma.user.findMany({
       orderBy: { name: "asc" },
       include: {
@@ -18,6 +19,7 @@ export default async function SettingsPage() {
     }),
     prisma.customer.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.technician.findMany({ select: { id: true, name: true, specialization: true, active: true, createdAt: true }, orderBy: { name: "asc" } }),
+    getOrgSettings(),
   ]);
 
   const serialized = users.map(u => ({
@@ -46,6 +48,7 @@ export default async function SettingsPage() {
         createdAt: t.createdAt.toISOString(),
       }))}
       currentUserId={session.user.id}
+      branding={branding}
     />
   );
 }

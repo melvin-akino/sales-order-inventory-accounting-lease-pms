@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PrintButton } from "../../PrintButton";
-import { brand } from "@/lib/brand";
+import { getOrgSettings } from "@/lib/org-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +35,8 @@ const FORM_DETAILS: Record<string, { title: string; subtitle: string; taxType: s
 export default async function PrintBirPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session || !["FINANCE", "ADMIN"].includes(session.user.role)) redirect("/orders");
+
+  const brand = await getOrgSettings();
 
   const filing = await prisma.birFiling.findUnique({ where: { id: params.id } });
   if (!filing) notFound();

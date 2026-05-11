@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useMobileNav } from "@/components/layout/NavContext";
 import type { NavItem } from "@/types";
 import type { Role } from "@prisma/client";
-import { brand } from "@/lib/brand";
+import type { OrgBrand } from "@/lib/org-settings";
 
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Dashboard",      href: "/dashboard", icon: "home",          roles: ["AGENT", "FINANCE", "WAREHOUSE", "TECHNICIAN", "DRIVER", "ADMIN"] },
@@ -78,7 +78,7 @@ function canSee(item: NavItem, role: Role) {
   return !item.roles || item.roles.includes(role);
 }
 
-export function Sidebar() {
+export function Sidebar({ brand }: { brand: OrgBrand }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { open, close } = useMobileNav();

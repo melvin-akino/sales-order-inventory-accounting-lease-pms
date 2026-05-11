@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { computeTrialBalance, COA } from "@/lib/coa";
 import { PrintButton } from "../PrintButton";
 import type { ReportType } from "@/app/(dashboard)/reports/page";
-import { brand } from "@/lib/brand";
+import { getOrgSettings } from "@/lib/org-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +18,8 @@ interface Props { searchParams: { type?: string; from?: string; to?: string } }
 export default async function PrintReportPage({ searchParams }: Props) {
   const session = await getServerSession(authOptions);
   if (!session || !["FINANCE", "ADMIN"].includes(session.user.role)) redirect("/orders");
+
+  const brand = await getOrgSettings();
 
   const type = (searchParams.type ?? "SALES") as ReportType;
   const toDate = searchParams.to ?? new Date().toISOString().slice(0, 10);

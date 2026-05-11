@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
-import { brand } from "@/lib/brand";
+import { getOrgSettings } from "@/lib/org-settings";
 
 interface Props { params: { id: string } }
 
@@ -19,6 +19,8 @@ export default async function StatementPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   if (!["FINANCE", "ADMIN", "AGENT"].includes(session.user.role)) redirect("/dashboard");
+
+  const brand = await getOrgSettings();
 
   const customer = await prisma.customer.findUnique({
     where: { id: params.id },

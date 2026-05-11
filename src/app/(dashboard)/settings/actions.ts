@@ -111,6 +111,36 @@ export async function updateTechnician(input: { id: string; name: string; specia
   revalidatePath("/settings");
 }
 
+// ── Branding ──────────────────────────────────────────────────────────────────
+const BrandSchema = z.object({
+  name:    z.string().min(1),
+  tagline: z.string().min(1),
+  address: z.string().min(1),
+  phone:   z.string().min(1),
+  email:   z.string().email(),
+  tin:     z.string().min(1),
+  website: z.string().min(1),
+  color:   z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  rdo:     z.string(),
+  zip:     z.string(),
+});
+
+export async function saveBranding(input: z.infer<typeof BrandSchema>) {
+  await requireAdmin();
+  const data = BrandSchema.parse(input);
+  await prisma.orgSettings.upsert({
+    where: { id: "singleton" },
+    update: data,
+    create: { id: "singleton", ...data },
+  });
+  revalidatePath("/", "layout");
+}
+
+export async function getBranding() {
+  await requireAdmin();
+  return prisma.orgSettings.findUnique({ where: { id: "singleton" } });
+}
+
 // ── Reset password ────────────────────────────────────────────────────────────
 export async function resetPassword(userId: string, newPassword: string) {
   await requireAdmin();

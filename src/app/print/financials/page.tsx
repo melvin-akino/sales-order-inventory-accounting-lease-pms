@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { computeTrialBalance, COA_BY_CODE } from "@/lib/coa";
 import { PrintButton } from "../PrintButton";
-import { brand } from "@/lib/brand";
+import { getOrgSettings } from "@/lib/org-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +43,8 @@ function Divider() {
 export default async function PrintFinancialsPage() {
   const session = await getServerSession(authOptions);
   if (!session || !["FINANCE", "ADMIN"].includes(session.user.role)) redirect("/orders");
+
+  const brand = await getOrgSettings();
 
   const journalEntries = await prisma.journalEntry.findMany({ include: { lines: true } });
 

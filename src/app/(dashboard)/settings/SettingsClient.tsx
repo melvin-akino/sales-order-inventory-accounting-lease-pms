@@ -3,8 +3,9 @@
 import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme, type Theme } from "@/components/ThemeProvider";
-import { createUser, updateUser, resetPassword, createTechnician, updateTechnician } from "./actions";
+import { createUser, updateUser, resetPassword, createTechnician, updateTechnician, saveBranding } from "./actions";
 import type { Role } from "@prisma/client";
+import type { OrgBrand } from "@/lib/org-settings";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface UserRow {
@@ -37,6 +38,7 @@ interface Props {
   technicians: Technician[];
   allTechnicians: TechRow[];
   currentUserId: string;
+  branding: OrgBrand;
 }
 
 const ALL_ROLES: Role[] = ["ADMIN", "AGENT", "FINANCE", "WAREHOUSE", "TECHNICIAN", "DRIVER", "CUSTOMER"];
@@ -305,6 +307,120 @@ function EditModal({ user, customers, technicians, currentUserId, onClose }: {
         </div>
       </form>
     </ModalBox>
+  );
+}
+
+// ── Branding tab ──────────────────────────────────────────────────────────────
+function BrandingTab({ initial }: { initial: OrgBrand }) {
+  const [pending, startTransition] = useTransition();
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState("");
+  const [form, setForm] = useState<OrgBrand>({ ...initial });
+
+  function set(key: keyof OrgBrand, value: string) {
+    setForm(f => ({ ...f, [key]: value }));
+    setSaved(false);
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(""); setSaved(false);
+    startTransition(async () => {
+      try {
+        await saveBranding(form);
+        setSaved(true);
+      } catch (e: unknown) {
+        setErr(e instanceof Error ? e.message : "Save failed");
+      }
+    });
+  }
+
+  const Field = ({ label, id, value, type = "text", placeholder }: {
+    label: string; id: keyof OrgBrand; value: string; type?: string; placeholder?: string;
+  }) => (
+    <div>
+      <label className="field-label">{label}</label>
+      <input
+        type={type}
+        className="field-input"
+        value={value}
+        placeholder={placeholder}
+        onChange={e => set(id, e.target.value)}
+      />
+    </div>
+  );
+
+  return (
+    <form onSubmit={submit} style={{ maxWidth: 640, display: "flex", flexDirection: "column", gap: 20 }}>
+      <p style={{ fontSize: 13, color: "oklch(var(--ink-2))", margin: 0 }}>
+        These values appear on all printed documents and in the sidebar. Changes take effect immediately.
+      </p>
+
+      {/* Preview strip */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
+        background: "oklch(var(--panel))", border: "1px solid oklch(var(--line))",
+        borderRadius: 10, borderLeft: `4px solid ${form.color}`,
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 7, background: form.color,
+          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M12 2v20M2 12h20" />
+          </svg>
+        </div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: form.color }}>{form.name || "Organisation Name"}</div>
+          <div style={{ fontSize: 11.5, color: "oklch(var(--ink-3))", marginTop: 1 }}>{form.tagline || "Tagline"}</div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <Field label="Organisation Name *"  id="name"    value={form.name}    placeholder="MediSupply PH" />
+        <Field label="Tagline *"             id="tagline" value={form.tagline} placeholder="Medical Equipment & Supplies" />
+      </div>
+      <Field label="Registered Address *" id="address" value={form.address} placeholder="3F Tower, City, Metro Manila" />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <Field label="Phone *"   id="phone"   value={form.phone}   placeholder="+63 2 8123 4567" />
+        <Field label="Email *"   id="email"   value={form.email}   placeholder="info@example.ph" type="email" />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <Field label="TIN *"     id="tin"     value={form.tin}     placeholder="123-456-789-000" />
+        <Field label="Website"   id="website" value={form.website} placeholder="www.example.ph" />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+        <Field label="RDO Code"  id="rdo" value={form.rdo} placeholder="044" />
+        <Field label="ZIP Code"  id="zip" value={form.zip} placeholder="1550" />
+        <div>
+          <label className="field-label">Brand Colour *</label>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="color"
+              value={form.color}
+              onChange={e => set("color", e.target.value)}
+              style={{ width: 38, height: 34, padding: 2, border: "1px solid oklch(var(--line))", borderRadius: 6, cursor: "pointer", background: "none" }}
+            />
+            <input
+              type="text"
+              className="field-input"
+              value={form.color}
+              onChange={e => set("color", e.target.value)}
+              placeholder="#003087"
+              style={{ flex: 1 }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {err && <p style={{ color: "oklch(var(--err))", fontSize: 12.5, margin: 0 }}>{err}</p>}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button type="submit" className="btn btn-primary" disabled={pending}>
+          {pending ? "Saving…" : "Save Branding"}
+        </button>
+        {saved && <span style={{ fontSize: 13, color: "oklch(0.50 0.10 155)" }}>✓ Saved — reload to see sidebar update</span>}
+      </div>
+    </form>
   );
 }
 
@@ -622,8 +738,8 @@ function TechniciansTab({ technicians }: { technicians: TechRow[] }) {
 }
 
 // ── Main SettingsClient ───────────────────────────────────────────────────────
-export function SettingsClient({ users, customers, technicians, allTechnicians, currentUserId }: Props) {
-  const [tab, setTab] = useState<"users" | "technicians" | "appearance">("users");
+export function SettingsClient({ users, customers, technicians, allTechnicians, currentUserId, branding }: Props) {
+  const [tab, setTab] = useState<"users" | "technicians" | "branding" | "appearance">("users");
 
   return (
     <div>
@@ -641,6 +757,9 @@ export function SettingsClient({ users, customers, technicians, allTechnicians, 
           Technicians
           <span className="tab-count">{allTechnicians.length}</span>
         </button>
+        <button className="tab" aria-selected={tab === "branding"} onClick={() => setTab("branding")}>
+          Branding
+        </button>
         <button className="tab" aria-selected={tab === "appearance"} onClick={() => setTab("appearance")}>
           Appearance
         </button>
@@ -655,6 +774,7 @@ export function SettingsClient({ users, customers, technicians, allTechnicians, 
         />
       )}
       {tab === "technicians" && <TechniciansTab technicians={allTechnicians} />}
+      {tab === "branding" && <BrandingTab initial={branding} />}
       {tab === "appearance" && <AppearanceTab />}
     </div>
   );

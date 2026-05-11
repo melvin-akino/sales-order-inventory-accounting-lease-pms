@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
 import { PrintLetterhead } from "@/components/print/PrintLetterhead";
+import { getOrgSettings } from "@/lib/org-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,8 @@ function peso(n: number | string) {
 export default async function PrintPoPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session || !["WAREHOUSE", "ADMIN"].includes(session.user.role)) redirect("/orders");
+
+  const brand = await getOrgSettings();
 
   const po = await prisma.inboundPO.findUnique({
     where: { id: params.id },
@@ -50,7 +53,7 @@ export default async function PrintPoPage({ params }: { params: { id: string } }
 
       <FloatingPrintButton backHref="/inbound" />
 
-      <PrintLetterhead docTitle="Purchase Order" docSub={po.id} dark />
+      <PrintLetterhead brand={brand} docTitle="Purchase Order" docSub={po.id} dark />
 
       {/* Info grid */}
       <div style={{ border: "1px solid #d1d5db", borderTop: 0, padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>

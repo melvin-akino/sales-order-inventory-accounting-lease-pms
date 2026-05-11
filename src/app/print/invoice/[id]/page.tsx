@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
 import { PrintLetterhead } from "@/components/print/PrintLetterhead";
+import { getOrgSettings } from "@/lib/org-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,8 @@ function peso(n: number | string) {
 export default async function PrintInvoicePage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session || !["FINANCE", "ADMIN", "AGENT"].includes(session.user.role)) redirect("/orders");
+
+  const brand = await getOrgSettings();
 
   const invoice = await prisma.invoice.findUnique({
     where: { id: params.id },
@@ -53,7 +56,7 @@ export default async function PrintInvoicePage({ params }: { params: { id: strin
 
       <FloatingPrintButton backHref="/ledger" />
 
-      <PrintLetterhead docTitle="Invoice" docSub={invoice.id} />
+      <PrintLetterhead brand={brand} docTitle="Invoice" docSub={invoice.id} />
 
       {/* Meta grid */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 28 }}>

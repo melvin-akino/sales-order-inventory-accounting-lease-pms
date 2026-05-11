@@ -4,12 +4,15 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FloatingPrintButton } from "../../PrintButton";
 import { PrintLetterhead } from "@/components/print/PrintLetterhead";
+import { getOrgSettings } from "@/lib/org-settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function PrintDeliveryPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+
+  const brand = await getOrgSettings();
 
   const shipment = await prisma.shipment.findUnique({
     where: { id: params.id },
@@ -55,7 +58,7 @@ export default async function PrintDeliveryPage({ params }: { params: { id: stri
 
       <FloatingPrintButton backHref={`/orders/${order.id}`} />
 
-      <PrintLetterhead docTitle="Delivery Receipt" docSub="Packing List / Proof of Delivery" dark />
+      <PrintLetterhead brand={brand} docTitle="Delivery Receipt" docSub="Packing List / Proof of Delivery" dark />
 
       {/* Info grid */}
       <div style={{ border: "1px solid #d1d5db", borderTop: 0, padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
