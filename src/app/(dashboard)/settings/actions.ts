@@ -123,6 +123,7 @@ const BrandSchema = z.object({
   color:   z.string().regex(/^#[0-9a-fA-F]{6}$/),
   rdo:     z.string(),
   zip:     z.string(),
+  logoUrl: z.string(),
 });
 
 export async function saveBranding(input: z.infer<typeof BrandSchema>) {
@@ -139,6 +140,44 @@ export async function saveBranding(input: z.infer<typeof BrandSchema>) {
 export async function getBranding() {
   await requireAdmin();
   return prisma.orgSettings.findUnique({ where: { id: "singleton" } });
+}
+
+// ── Logo upload ───────────────────────────────────────────────────────────────
+export async function uploadLogo(formData: FormData): Promise<{ logoUrl: string }> {
+  await requireAdmin();
+
+  const file = formData.get("file") as File | null;
+  if (!file) throw new Error("No file provided");
+  if (file.size > 2 * 1024 * 1024) throw new Error("Logo must be under 2 MB");
+
+  const allowed = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+  if (!allowed.includes(file.type)) throw new Error("Only PNG, JPG, WebP or SVG allowed");
+
+  const { writeFile, mkdir } = await import("fs/promises");
+  const { join } = await import("path");
+  const { randomUUID } = await import("crypto");
+
+  const ext = file.name.split(".").pop() ?? "png";
+  const filename = `logo-${randomUUID()}.${ext}`;
+  const dir = join(process.cwd(), "public", "uploads", "branding");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, filename), Buffer.from(await file.arrayBuffer()));
+
+  const logoUrl = `/uploads/branding/${filename}`;
+
+  // Persist to DB — upsert so it works even if no other branding was saved yet
+  await prisma.orgSettings.upsert({
+    where: { id: "singleton" },
+    update: { logoUrl },
+    create: {
+      id: "singleton",
+      logoUrl,
+      name: "", tagline: "", address: "", phone: "", email: "", tin: "", website: "", color: "#003087", rdo: "", zip: "",
+    },
+  });
+
+  revalidatePath("/", "layout");
+  return { logoUrl };
 }
 
 // ── Reset password ────────────────────────────────────────────────────────────

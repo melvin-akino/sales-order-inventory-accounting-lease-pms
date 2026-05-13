@@ -37,13 +37,19 @@ export function PrintLetterhead({ brand, docTitle, docSub, dark = false }: Props
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 8,
-          background: brand.color,
+          background: brand.logoUrl ? "white" : brand.color,
           display: "flex", alignItems: "center", justifyContent: "center",
           flexShrink: 0,
+          border: brand.logoUrl ? "1px solid #e5e7eb" : undefined,
+          padding: brand.logoUrl ? 3 : undefined,
         }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M12 2v20M2 12h20" />
-          </svg>
+          {brand.logoUrl ? (
+            <img src={brand.logoUrl} alt={brand.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 2v20M2 12h20" />
+            </svg>
+          )}
         </div>
         <div>
           <div style={{ fontSize: 20, fontWeight: 800, color: brand.color, letterSpacing: "-0.02em", lineHeight: 1.1 }}>

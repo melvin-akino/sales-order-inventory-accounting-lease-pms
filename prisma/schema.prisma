@@ -718,7 +718,7 @@ model Lot {
 // ─── Organisation Settings ────────────────────────────────────────────────────
 
 model OrgSettings {
-  id      String @id @default("singleton")
+  id      String  @id @default("singleton")
   name    String
   tagline String
   address String
@@ -727,8 +727,9 @@ model OrgSettings {
   tin     String
   website String
   color   String
-  rdo     String @default("")
-  zip     String @default("")
+  rdo     String  @default("")
+  zip     String  @default("")
+  logoUrl String? // URL to the uploaded logo file
 
   @@map("org_settings")
 }

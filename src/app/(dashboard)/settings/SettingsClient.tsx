@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme, type Theme } from "@/components/ThemeProvider";
-import { createUser, updateUser, resetPassword, createTechnician, updateTechnician, saveBranding } from "./actions";
+import { createUser, updateUser, resetPassword, createTechnician, updateTechnician, saveBranding, uploadLogo } from "./actions";
 import type { Role } from "@prisma/client";
 import type { OrgBrand } from "@/lib/org-settings";
 
@@ -338,9 +338,47 @@ function BrandingTab({ initial }: { initial: OrgBrand }) {
   const [err, setErr] = useState("");
   const [form, setForm] = useState<OrgBrand>({ ...initial });
 
+  // Logo upload state
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoErr, setLogoErr] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
   function set(key: keyof OrgBrand, value: string) {
     setForm(f => ({ ...f, [key]: value }));
     setSaved(false);
+  }
+
+  async function handleLogoFile(file: File) {
+    setLogoErr("");
+    setLogoUploading(true);
+    // Optimistic local preview
+    const previewUrl = URL.createObjectURL(file);
+    setForm(f => ({ ...f, logoUrl: previewUrl }));
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const result = await uploadLogo(fd);
+      setForm(f => ({ ...f, logoUrl: result.logoUrl }));
+    } catch (e: unknown) {
+      setLogoErr(e instanceof Error ? e.message : "Upload failed");
+      setForm(f => ({ ...f, logoUrl: initial.logoUrl })); // revert on error
+    } finally {
+      setLogoUploading(false);
+      URL.revokeObjectURL(previewUrl);
+    }
+  }
+
+  function onLogoInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleLogoFile(file);
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleLogoFile(file);
   }
 
   function submit(e: React.FormEvent) {
@@ -368,18 +406,97 @@ function BrandingTab({ initial }: { initial: OrgBrand }) {
         background: "oklch(var(--panel))", border: "1px solid oklch(var(--line))",
         borderRadius: 10, borderLeft: `4px solid ${form.color}`,
       }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: 7, background: form.color,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M12 2v20M2 12h20" />
-          </svg>
-        </div>
+        {/* Logo or fallback icon */}
+        {form.logoUrl ? (
+          <img
+            src={form.logoUrl}
+            alt="Logo preview"
+            style={{ width: 36, height: 36, borderRadius: 7, objectFit: "contain", flexShrink: 0, background: "white", padding: 2 }}
+          />
+        ) : (
+          <div style={{
+            width: 36, height: 36, borderRadius: 7, background: form.color,
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 2v20M2 12h20" />
+            </svg>
+          </div>
+        )}
         <div>
           <div style={{ fontWeight: 700, fontSize: 14, color: form.color }}>{form.name || "Organisation Name"}</div>
           <div style={{ fontSize: 11.5, color: "oklch(var(--ink-3))", marginTop: 1 }}>{form.tagline || "Tagline"}</div>
         </div>
+      </div>
+
+      {/* Logo upload */}
+      <div>
+        <label className="field-label">Organisation Logo</label>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => logoInputRef.current?.click()}
+          onKeyDown={e => (e.key === "Enter" || e.key === " ") && logoInputRef.current?.click()}
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+          style={{
+            border: `2px dashed ${dragOver ? "oklch(var(--accent))" : "oklch(var(--line))"}`,
+            borderRadius: 10,
+            padding: "20px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            cursor: logoUploading ? "wait" : "pointer",
+            background: dragOver ? "oklch(var(--accent-soft))" : "transparent",
+            transition: "border-color 0.15s, background 0.15s",
+          }}
+        >
+          {/* Current logo or placeholder */}
+          {form.logoUrl ? (
+            <img
+              src={form.logoUrl}
+              alt="Logo"
+              style={{ width: 56, height: 56, objectFit: "contain", borderRadius: 8, border: "1px solid oklch(var(--line))", background: "white", padding: 4, flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{
+              width: 56, height: 56, borderRadius: 8,
+              background: "oklch(var(--panel-2, var(--panel)))",
+              border: "1px solid oklch(var(--line))",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              color: "oklch(var(--ink-3))",
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <rect x="3" y="3" width="18" height="18" rx="3" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5L5 21" />
+              </svg>
+            </div>
+          )}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "oklch(var(--ink))" }}>
+              {logoUploading ? "Uploading…" : form.logoUrl ? "Click or drag to replace logo" : "Click or drag to upload logo"}
+            </div>
+            <div style={{ fontSize: 11.5, color: "oklch(var(--ink-3))", marginTop: 3 }}>
+              PNG, JPG, WebP or SVG · max 2 MB · Recommended: 200×200 px or larger
+            </div>
+            {logoErr && <div style={{ fontSize: 12, color: "oklch(var(--err))", marginTop: 4 }}>{logoErr}</div>}
+          </div>
+          {logoUploading && (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(var(--accent))" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, animation: "spin 1s linear infinite" }}>
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+          )}
+        </div>
+        <input
+          ref={logoInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          style={{ display: "none" }}
+          onChange={onLogoInputChange}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -421,7 +538,7 @@ function BrandingTab({ initial }: { initial: OrgBrand }) {
 
       {err && <p style={{ color: "oklch(var(--err))", fontSize: 12.5, margin: 0 }}>{err}</p>}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <button type="submit" className="btn btn-primary" disabled={pending}>
+        <button type="submit" className="btn btn-primary" disabled={pending || logoUploading}>
           {pending ? "Saving…" : "Save Branding"}
         </button>
         {saved && <span style={{ fontSize: 13, color: "oklch(0.50 0.10 155)" }}>✓ Saved — reload to see sidebar update</span>}

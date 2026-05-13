@@ -96,11 +96,19 @@ export function Sidebar({ brand }: { brand: OrgBrand }) {
       )}
       <aside className="sidebar" data-mobile-open={open ? "true" : "false"}>
       <div className="sidebar-brand">
-        <div className="sidebar-logo" style={{ background: brand.color }}>
-          {/* Medical cross mark */}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M12 2v20M2 12h20" />
-          </svg>
+        <div className="sidebar-logo" style={{ background: brand.logoUrl ? "transparent" : brand.color }}>
+          {brand.logoUrl ? (
+            <img
+              src={brand.logoUrl}
+              alt={brand.name}
+              style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "inherit" }}
+            />
+          ) : (
+            /* Medical cross mark fallback */
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 2v20M2 12h20" />
+            </svg>
+          )}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           <span className="sidebar-org">{brand.name}</span>
