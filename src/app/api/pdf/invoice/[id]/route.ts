@@ -11,7 +11,7 @@ import { readFile } from "fs/promises";
 function peso(n: number) {
   return "\u20B1" + n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-function toBuffer(doc: import("pdfkit")): Promise<Buffer> {
+function toBuffer(doc: InstanceType<typeof import("pdfkit")>): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     doc.on("data",  (c: Buffer) => chunks.push(c));
@@ -220,7 +220,7 @@ export async function GET(
   doc.end();
   const buffer = await toBuffer(doc);
 
-  return new NextResponse(buffer, {
+  return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       "Content-Type":        "application/pdf",
       "Content-Disposition": `attachment; filename="INV-${invoice.id}.pdf"`,
