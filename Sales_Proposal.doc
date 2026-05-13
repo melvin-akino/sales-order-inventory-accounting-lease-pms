@@ -1,0 +1,96 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset="utf-8">
+    <title>Sales Proposal</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #333333; }
+        h1 { font-size: 20pt; color: #2C3E50; border-bottom: 2px solid #2C3E50; padding-bottom: 5px; margin-bottom: 20px; }
+        h2 { font-size: 14pt; color: #2980B9; margin-top: 25px; margin-bottom: 10px; }
+        h3 { font-size: 12pt; color: #16A085; }
+        p { margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; font-size: 11pt; }
+        th, td { border: 1px solid #BDC3C7; padding: 10px; text-align: left; }
+        th { background-color: #ECF0F1; color: #2C3E50; font-weight: bold; }
+        .highlight { background-color: #F1C40F; font-weight: bold; padding: 2px 5px; border-radius: 3px; }
+        .total-row td { font-weight: bold; background-color: #EAEDED; }
+        .proposal-value { font-size: 16pt; color: #C0392B; font-weight: bold; margin-top: 15px; margin-bottom: 15px;}
+        ul { margin-bottom: 15px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+
+<h1>Commercial Sales Proposal: MediSupply ERP</h1>
+
+<p><strong>To:</strong> Key Stakeholders & Management<br>
+<strong>Date:</strong> May 13, 2026<br>
+<strong>Subject:</strong> Proposal for Implementation of MediSupply ERP</p>
+
+<h2>1. The Opportunity</h2>
+<p>Modernizing a Philippine medical supply distributorship requires more than just off-the-shelf software; it demands a unified platform capable of handling local complexities (like BIR taxes and CWT), multi-warehouse logistics, lease management, and preventive maintenance. MediSupply ERP has been engineered from the ground up to solve these exact challenges, bringing enterprise-tier automation directly to your operations.</p>
+
+<h2>2. Value Proposition</h2>
+<p>By implementing MediSupply ERP, your organization will benefit from:</p>
+<ul>
+    <li><strong>Reduced Operational Overhead:</strong> Automate manual entries between sales, warehouse, and finance departments.</li>
+    <li><strong>Zero Regulatory Fines:</strong> Built-in BIR compliance tracking guarantees you never miss a filing or miscalculate taxes.</li>
+    <li><strong>Complete Traceability:</strong> Immutable audit logs and rigorous finance approval workflows protect the bottom line.</li>
+    <li><strong>Long-Term Scalability:</strong> No per-user licensing fees, meaning your software costs remain flat as your team grows.</li>
+</ul>
+
+<h2>3. Estimated Market Value & Cost Breakdown</h2>
+<p>To highlight the value of our offering, we have calculated the standard market effort required to build a bespoke system of this magnitude, utilizing top-tier engineering talent.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Scope of Work</th>
+            <th>Est. Hours</th>
+            <th>Standard Rate</th>
+            <th>Estimated Cost (PHP)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Core Modules</strong><br><em>(Dashboard, Sales, Approvals, Warehouse, Shipments, PO, Inventory, Leases, PMS, Equipment, Catalog, CRM, Suppliers, Ledger, Reports, Audit, Portal, Settings)</em></td>
+            <td>300 – 400 hrs</td>
+            <td>₱700 / hr</td>
+            <td>₱210,000 – ₱280,000</td>
+        </tr>
+        <tr>
+            <td><strong>Cross-Cutting Features & Help System</strong><br><em>(RBAC, Integrated Onboarding, Notifications, Export Engine)</em></td>
+            <td>80 – 120 hrs</td>
+            <td>₱700 / hr</td>
+            <td>₱56,000 – ₱84,000</td>
+        </tr>
+        <tr>
+            <td><strong>Quality Assurance & Infrastructure</strong><br><em>(DB Design, E2E Testing via Playwright, CI/CD, Data Seeding)</em></td>
+            <td>20 – 30 hrs</td>
+            <td>₱700 / hr</td>
+            <td>₱14,000 – ₱21,000</td>
+        </tr>
+        <tr class="total-row">
+            <td><strong>Total Estimated Development Value</strong></td>
+            <td><strong>400 – 550 hrs</strong></td>
+            <td></td>
+            <td><strong>₱280,000 – ₱385,000</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>4. Our Special Proposal Pricing</h2>
+<p>In recognition of a strategic partnership, we are offering the complete, fully-featured MediSupply ERP platform at a fixed, discounted rate.</p>
+
+<div class="proposal-value">Total Fixed Price: ₱350,000</div>
+
+<h3>Why This is an Exceptional Investment:</h3>
+<ul>
+    <li><strong>High Value:</strong> The ₱350,000 flat fee is securely within the lower half of the total estimated market value.</li>
+    <li><strong>No Vendor Lock-In:</strong> You own the ecosystem. No escalating SaaS subscription costs or user seat licenses.</li>
+    <li><strong>Enterprise-Grade:</strong> You receive a beautifully designed, rigorously tested (Vitest + Playwright) software suite that matches the capabilities of multi-million peso ERP systems.</li>
+</ul>
+
+<p><em>We look forward to transforming your business operations with MediSupply ERP.</em></p>
+
+</body>
+</html>

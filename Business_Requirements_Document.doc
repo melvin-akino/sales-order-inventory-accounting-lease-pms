@@ -1,0 +1,76 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset="utf-8">
+    <title>Business Requirements Document</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; }
+        h1 { font-size: 18pt; color: #2C3E50; border-bottom: 2px solid #2C3E50; padding-bottom: 5px; }
+        h2 { font-size: 14pt; color: #2980B9; margin-top: 20px; }
+        p { margin-bottom: 10px; }
+        li { margin-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
+        th, td { border: 1px solid #BDC3C7; padding: 8px; text-align: left; }
+        th { background-color: #ECF0F1; }
+    </style>
+</head>
+<body>
+
+<h1>Business Requirements Document (BRD) & Technical Proposal</h1>
+<p><strong>Project Name:</strong> MediSupply ERP (Sales, Inventory, Accounting, Lease & PMS)<br>
+<strong>Document Type:</strong> Business Requirements Document & Technical Proposal<br>
+<strong>Date:</strong> May 13, 2026</p>
+
+<h2>1. Executive Summary</h2>
+<p>MediSupply ERP is a comprehensive, full-stack enterprise resource planning system tailored specifically for Philippine medical supply distributors. The system aims to centralize and automate the entire order-to-cash and procure-to-pay lifecycles. By integrating sales order management, multi-warehouse inventory tracking, equipment leasing, preventive maintenance (PMS), and full double-entry accounting with localized BIR compliance, this solution will drastically reduce manual bottlenecks, ensure regulatory compliance, and deliver real-time operational visibility.</p>
+<p>At a fixed investment of <strong>₱350,000</strong>, this system delivers enterprise-grade capabilities typically found in multi-million-peso platforms, providing an exceptional return on investment through operational efficiency and robust automation.</p>
+
+<h2>2. Core System Modules (18 Modules)</h2>
+<p>The system is divided into 18 highly cohesive core modules, accessible via role-based access control (RBAC):</p>
+<ol>
+    <li><strong>Dashboard:</strong> Role-specific KPIs, real-time revenue trend charts, and operational summaries for Executives, Finance, Warehouse, and Agents.</li>
+    <li><strong>Sales Orders:</strong> End-to-end order lifecycle management with a built-in state machine. Includes automated VAT (12%) and CWT (2%) computation.</li>
+    <li><strong>Approvals:</strong> Dedicated finance approval queue with complete audit trails to enforce financial governance before fulfillment.</li>
+    <li><strong>Warehouse:</strong> Kanban board interfaces for streamlined pick/pack operations across multiple warehouse locations.</li>
+    <li><strong>Shipments:</strong> Comprehensive shipment tracking, courier assignment, delivery confirmations, and Proof of Delivery (POD) signature uploads.</li>
+    <li><strong>Purchase Orders (Inbound):</strong> PO creation, expected arrival tracking, and robust goods receipt capabilities including damage tracking and automated stock updates.</li>
+    <li><strong>Inventory:</strong> Real-time stock visibility across multi-warehouse setups, with reorder level alerts, visual flags, and complete stock move history with unit cost tracking.</li>
+    <li><strong>Leases:</strong> Management of equipment lease agreements, monthly billing cycles, and contract status tracking for long-term customer engagements.</li>
+    <li><strong>PMS / Work Orders:</strong> Preventive Maintenance System featuring work order CRUD, Kanban workflows, and a full-screen Technician Kiosk mode for on-floor execution.</li>
+    <li><strong>Equipment:</strong> Unified asset registry tracking serial numbers, models, locations, and comprehensive maintenance histories linked directly to work orders.</li>
+    <li><strong>Catalog:</strong> Centralized Product/SKU management system governing pricing, unit of measure, and branding.</li>
+    <li><strong>Customers:</strong> A lightweight CRM for managing customer relationships, credit limits, TINs, payment terms, and region mapping.</li>
+    <li><strong>Suppliers:</strong> Supplier database with lead time tracking and performance rating capabilities.</li>
+    <li><strong>Accounting (Ledger):</strong> A complete double-entry ledger system featuring a 35-account Philippine-flavored Chart of Accounts (COA). Includes Accounts Receivable (AR), Accounts Payable (AP), automatic Trial Balance generation, and integrated BIR tax compliance.</li>
+    <li><strong>Reports:</strong> Configurable report builder for Sales Summaries, AR Aging, Inventory Snapshots, PO Summaries, and live P&L statements with CSV/PDF exports.</li>
+    <li><strong>Activity Log:</strong> A unified, immutable audit feed tracking order transitions, stock moves, journal entries, and work order notes.</li>
+    <li><strong>Customer Portal:</strong> A self-service portal empowering customers to track their own orders and view outstanding invoices without tying up customer service agents.</li>
+    <li><strong>Settings:</strong> Administrative control panel for user management, role assignments, system configuration, and organizational branding.</li>
+</ol>
+
+<h2>3. Cross-Cutting Features & Help System</h2>
+<p>To ensure seamless adoption and maintainability, the system is reinforced by robust cross-cutting capabilities:</p>
+<ul>
+    <li><strong>Role-Based Access Control (RBAC):</strong> 7 distinct roles (ADMIN, FINANCE, AGENT, WAREHOUSE, TECHNICIAN, DRIVER, CUSTOMER) ensuring data security and proper workflow routing.</li>
+    <li><strong>Integrated Help System & Onboarding:</strong> Contextual tooltips, inline documentation, and guided walkthroughs for complex processes (like Journal Entries and BIR filings) to reduce training time and minimize user errors.</li>
+    <li><strong>Real-Time Notifications:</strong> In-app alerts tailored to roles (e.g., Finance alerted for overdue invoices, Warehouse alerted for low stock and pending PO arrivals).</li>
+    <li><strong>Print & Export Engine:</strong> Native browser-based document generation for Order Confirmations, Delivery Receipts, POs, Invoices, and BIR forms. Comprehensive CSV export functionality across all data grids.</li>
+</ul>
+
+<h2>4. Quality Assurance & Automated Testing</h2>
+<p>To guarantee zero regressions in mission-critical financial and operational logic, the system employs a rigorous, multi-layered automated testing strategy:</p>
+<ul>
+    <li><strong>Unit & Integration Testing (Vitest):</strong> Fast, highly focused testing covering critical business logic, automated VAT/CWT calculations, and complex Chart of Account (COA) trial balance computations.</li>
+    <li><strong>End-to-End Testing (Playwright):</strong> Browser-based workflow automation ensuring the user journey—from order creation and finance approval to fulfillment and invoicing—functions flawlessly across different roles.</li>
+    <li><strong>CI/CD Readiness:</strong> Automated test execution on every build, ensuring that new features do not break existing ERP stability.</li>
+</ul>
+
+<h2>5. Technical Architecture</h2>
+<ul>
+    <li><strong>Frontend & API:</strong> Next.js 14 App Router for a lightning-fast, highly responsive user interface with Server Actions to eliminate redundant API layers.</li>
+    <li><strong>Database:</strong> PostgreSQL managed via Prisma ORM for uncompromising transactional integrity, relational consistency, and type-safe queries.</li>
+    <li><strong>Styling:</strong> Tailwind CSS integrated with a dynamic CSS custom properties system to deliver a beautiful, modern, and highly usable interface.</li>
+    <li><strong>Deployment:</strong> Fully Dockerized architecture ensuring consistent parity between development, testing, and production environments.</li>
+</ul>
+
+</body>
+</html>

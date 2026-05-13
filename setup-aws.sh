@@ -90,6 +90,38 @@ echo "  ║        https://github.com/melvin-akino/...                  ║"
 echo "  ╚══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
+# ── 0. Swap space (critical for t2.micro / 1 GB RAM) ─────────────────────────
+banner "Checking Memory & Swap"
+
+TOTAL_RAM_MB=$(free -m | awk '/^Mem:/{print $2}')
+TOTAL_SWAP_MB=$(free -m | awk '/^Swap:/{print $2}')
+
+if [[ $TOTAL_RAM_MB -lt 2048 ]]; then
+  warn "Low RAM detected: ${TOTAL_RAM_MB} MB (t2.micro / free tier)"
+  warn "Docker builds require ~2 GB — adding 3 GB swap to compensate"
+
+  if [[ $TOTAL_SWAP_MB -gt 0 ]]; then
+    ok "Swap already active: ${TOTAL_SWAP_MB} MB"
+  else
+    log "Creating 3 GB swap file at /swapfile…"
+    fallocate -l 3G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=3072 status=none
+    chmod 600 /swapfile
+    mkswap /swapfile -q
+    swapon /swapfile
+    # Persist across reboots
+    grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    # Lower swappiness so RAM is preferred
+    sysctl -w vm.swappiness=10 > /dev/null
+    grep -q 'vm.swappiness' /etc/sysctl.conf || echo 'vm.swappiness=10' >> /etc/sysctl.conf
+    ok "3 GB swap created and enabled"
+    ok "Effective memory: ${TOTAL_RAM_MB} MB RAM + 3072 MB swap"
+  fi
+
+  warn "Build will be slower than normal (~20–30 min on t2.micro) — this is expected"
+else
+  ok "RAM: ${TOTAL_RAM_MB} MB — sufficient"
+fi
+
 # ── 1. Interactive configuration ──────────────────────────────────────────────
 banner "Configuration"
 
