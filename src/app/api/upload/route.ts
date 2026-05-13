@@ -6,7 +6,7 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { randomUUID } from "crypto";
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
+const UPLOAD_DIR = join(process.cwd(), "uploads");
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_TYPES = [
   "image/jpeg", "image/png", "image/webp", "image/gif",
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   const bytes = await file.arrayBuffer();
   await writeFile(join(dir, filename), Buffer.from(bytes));
 
-  const url = `/uploads/${entityType}/${filename}`;
+  const url = `/api/uploads/${entityType}/${filename}`;
 
   const attachment = await prisma.attachment.create({
     data: {

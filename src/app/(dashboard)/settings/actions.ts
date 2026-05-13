@@ -159,11 +159,13 @@ export async function uploadLogo(formData: FormData): Promise<{ logoUrl: string 
 
   const ext = file.name.split(".").pop() ?? "png";
   const filename = `logo-${randomUUID()}.${ext}`;
-  const dir = join(process.cwd(), "public", "uploads", "branding");
+  // Write to the persistent Docker volume mounted at /app/uploads
+  // Served back to the browser via /api/uploads/[...path]
+  const dir = join(process.cwd(), "uploads", "branding");
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, filename), Buffer.from(await file.arrayBuffer()));
 
-  const logoUrl = `/uploads/branding/${filename}`;
+  const logoUrl = `/api/uploads/branding/${filename}`;
 
   // Persist to DB — upsert so it works even if no other branding was saved yet
   await prisma.orgSettings.upsert({
