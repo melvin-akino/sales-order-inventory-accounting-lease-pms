@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { writeAudit } from "@/lib/audit";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import type { Role } from "@prisma/client";
@@ -39,10 +40,13 @@ export async function createUser(input: z.infer<typeof CreateUserSchema>) {
       email: data.email,
       passwordHash,
       role: data.role as Role,
-      customerId: data.role === "CUSTOMER" ? (data.customerId ?? null) : null,
+      customerId:  data.role === "CUSTOMER"   ? (data.customerId  ?? null) : null,
       technicianId: data.role === "TECHNICIAN" ? (data.technicianId ?? null) : null,
     },
   });
+
+  const session2 = await getServerSession(authOptions);
+  writeAudit({ action: "user.create", entityType: "user", entityId: data.email, actorId: session2?.user.id, actorName: session2?.user.name ?? undefined, meta: { role: data.role } }).catch(() => {});
 
   revalidatePath("/settings");
 }
@@ -70,11 +74,13 @@ export async function updateUser(input: z.infer<typeof UpdateUserSchema>) {
     data: {
       name: data.name,
       role: data.role as Role,
-      customerId: data.role === "CUSTOMER" ? (data.customerId ?? null) : null,
+      customerId:  data.role === "CUSTOMER"   ? (data.customerId  ?? null) : null,
       technicianId: data.role === "TECHNICIAN" ? (data.technicianId ?? null) : null,
       active: data.active,
     },
   });
+
+  writeAudit({ action: "user.update", entityType: "user", entityId: data.id, actorId: session.user.id, actorName: session.user.name ?? undefined, meta: { role: data.role, active: data.active } }).catch(() => {});
 
   revalidatePath("/settings");
 }
@@ -90,6 +96,9 @@ export async function createTechnician(input: { name: string; specialization?: s
   await prisma.technician.create({
     data: { name: data.name, specialization: data.specialization ?? null },
   });
+
+  const sess = await getServerSession(authOptions);
+  writeAudit({ action: "technician.create", entityType: "technician", actorId: sess?.user.id, actorName: sess?.user.name ?? undefined, meta: { name: data.name } }).catch(() => {});
 
   revalidatePath("/settings");
 }
@@ -107,6 +116,9 @@ export async function updateTechnician(input: { id: string; name: string; specia
     where: { id: data.id },
     data: { name: data.name, specialization: data.specialization ?? null, active: data.active },
   });
+
+  const sess2 = await getServerSession(authOptions);
+  writeAudit({ action: "technician.update", entityType: "technician", entityId: data.id, actorId: sess2?.user.id, actorName: sess2?.user.name ?? undefined, meta: { active: data.active } }).catch(() => {});
 
   revalidatePath("/settings");
 }
@@ -129,11 +141,13 @@ const BrandSchema = z.object({
 export async function saveBranding(input: z.infer<typeof BrandSchema>) {
   await requireAdmin();
   const data = BrandSchema.parse(input);
+  const sess3 = await getServerSession(authOptions);
   await prisma.orgSettings.upsert({
     where: { id: "singleton" },
     update: data,
     create: { id: "singleton", ...data },
   });
+  writeAudit({ action: "branding.save", entityType: "branding", actorId: sess3?.user.id, actorName: sess3?.user.name ?? undefined, meta: { name: data.name, color: data.color } }).catch(() => {});
   revalidatePath("/", "layout");
 }
 

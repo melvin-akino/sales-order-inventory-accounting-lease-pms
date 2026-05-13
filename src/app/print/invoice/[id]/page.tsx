@@ -54,7 +54,7 @@ export default async function PrintInvoicePage({ params }: { params: { id: strin
         @page { size: A4; margin: 12mm; }
       `}</style>
 
-      <FloatingPrintButton backHref="/ledger" />
+      <FloatingPrintButton backHref="/ledger" downloadHref={`/api/pdf/invoice/${invoice.id}`} />
 
       <PrintLetterhead brand={brand} docTitle="Invoice" docSub={invoice.id} />
 

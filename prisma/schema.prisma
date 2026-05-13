@@ -753,3 +753,23 @@ model Attachment {
   @@index([entityType, entityId])
   @@map("attachments")
 }
+
+// ── Generic Audit Log ─────────────────────────────────────────────────────────────
+// Captures cross-cutting events not stored in domain tables:
+// logins, settings saves, branding changes, user management.
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   // e.g. "user.login", "branding.save", "user.create"
+  entityType String?  // e.g. "user", "branding"
+  entityId   String?  // relevant entity ID
+  actorId    String?  // user who performed the action
+  actorName  String?  // denormalised — preserved if user is deleted
+  meta       String?  // JSON blob of extra context
+  at         DateTime @default(now())
+
+  @@index([action])
+  @@index([actorId])
+  @@index([at])
+  @@map("audit_logs")
+}

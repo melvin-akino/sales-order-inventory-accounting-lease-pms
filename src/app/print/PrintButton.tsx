@@ -14,7 +14,7 @@ export function PrintButton({ backHref, backLabel }: { backHref: string; backLab
   );
 }
 
-export function FloatingPrintButton({ backHref }: { backHref: string }) {
+export function FloatingPrintButton({ backHref, downloadHref }: { backHref: string; downloadHref?: string }) {
   return (
     <div className="no-print" style={{ position: "fixed", top: 16, right: 16, zIndex: 10, display: "flex", gap: 8 }}>
       <a
@@ -23,6 +23,15 @@ export function FloatingPrintButton({ backHref }: { backHref: string }) {
       >
         ← Back
       </a>
+      {downloadHref && (
+        <a
+          href={downloadHref}
+          download
+          style={{ padding: "8px 18px", borderRadius: 7, border: "none", background: "#7c3aed", color: "white", fontSize: 13, fontWeight: 600, cursor: "pointer", textDecoration: "none" }}
+        >
+          ↓ Download PDF
+        </a>
+      )}
       <button
         onClick={() => window.print()}
         style={{ padding: "8px 18px", borderRadius: 7, border: "none", background: "#0d9488", color: "white", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
@@ -32,3 +41,4 @@ export function FloatingPrintButton({ backHref }: { backHref: string }) {
     </div>
   );
 }
+

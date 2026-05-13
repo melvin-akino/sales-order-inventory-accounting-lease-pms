@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { writeAudit } from "@/lib/audit";
 import type { Role } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
@@ -42,12 +43,21 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
+    async jwt({ token, user, account }) {
+      if (user && account) {
+        token.id   = user.id;
         token.role = (user as unknown as { role: Role }).role;
-        token.customerId = (user as unknown as { customerId?: string }).customerId;
+        token.customerId   = (user as unknown as { customerId?: string }).customerId;
         token.technicianId = (user as unknown as { technicianId?: string }).technicianId;
+        // Fire-and-forget login audit event
+        writeAudit({
+          action:     "user.login",
+          entityType: "user",
+          entityId:   user.id,
+          actorId:    user.id,
+          actorName:  user.name ?? undefined,
+          meta:       { role: token.role },
+        }).catch(() => {});
       }
       return token;
     },
