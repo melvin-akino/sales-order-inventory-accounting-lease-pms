@@ -311,6 +311,27 @@ function EditModal({ user, customers, technicians, currentUserId, onClose }: {
 }
 
 // ── Branding tab ──────────────────────────────────────────────────────────────
+// Field must be defined OUTSIDE BrandingTab so React sees a stable component
+// reference across renders. If defined inside, every keystroke creates a new
+// component type, unmounts the old input, and the textbox loses focus.
+function BrandingField({ label, value, type = "text", placeholder, onChange }: {
+  label: string; value: string; type?: string; placeholder?: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label className="field-label">{label}</label>
+      <input
+        type={type}
+        className="field-input"
+        value={value}
+        placeholder={placeholder}
+        onChange={e => onChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
 function BrandingTab({ initial }: { initial: OrgBrand }) {
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -334,21 +355,6 @@ function BrandingTab({ initial }: { initial: OrgBrand }) {
       }
     });
   }
-
-  const Field = ({ label, id, value, type = "text", placeholder }: {
-    label: string; id: keyof OrgBrand; value: string; type?: string; placeholder?: string;
-  }) => (
-    <div>
-      <label className="field-label">{label}</label>
-      <input
-        type={type}
-        className="field-input"
-        value={value}
-        placeholder={placeholder}
-        onChange={e => set(id, e.target.value)}
-      />
-    </div>
-  );
 
   return (
     <form onSubmit={submit} style={{ maxWidth: 640, display: "flex", flexDirection: "column", gap: 20 }}>
@@ -377,21 +383,21 @@ function BrandingTab({ initial }: { initial: OrgBrand }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="Organisation Name *"  id="name"    value={form.name}    placeholder="MediSupply PH" />
-        <Field label="Tagline *"             id="tagline" value={form.tagline} placeholder="Medical Equipment & Supplies" />
+        <BrandingField label="Organisation Name *"  value={form.name}    placeholder="MediSupply PH"                    onChange={v => set("name", v)} />
+        <BrandingField label="Tagline *"             value={form.tagline} placeholder="Medical Equipment & Supplies"      onChange={v => set("tagline", v)} />
       </div>
-      <Field label="Registered Address *" id="address" value={form.address} placeholder="3F Tower, City, Metro Manila" />
+      <BrandingField label="Registered Address *" value={form.address} placeholder="3F Tower, City, Metro Manila"        onChange={v => set("address", v)} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="Phone *"   id="phone"   value={form.phone}   placeholder="+63 2 8123 4567" />
-        <Field label="Email *"   id="email"   value={form.email}   placeholder="info@example.ph" type="email" />
+        <BrandingField label="Phone *"   value={form.phone}   placeholder="+63 2 8123 4567"    onChange={v => set("phone", v)} />
+        <BrandingField label="Email *"   value={form.email}   placeholder="info@example.ph" type="email" onChange={v => set("email", v)} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="TIN *"     id="tin"     value={form.tin}     placeholder="123-456-789-000" />
-        <Field label="Website"   id="website" value={form.website} placeholder="www.example.ph" />
+        <BrandingField label="TIN *"     value={form.tin}     placeholder="123-456-789-000"    onChange={v => set("tin", v)} />
+        <BrandingField label="Website"   value={form.website} placeholder="www.example.ph"     onChange={v => set("website", v)} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-        <Field label="RDO Code"  id="rdo" value={form.rdo} placeholder="044" />
-        <Field label="ZIP Code"  id="zip" value={form.zip} placeholder="1550" />
+        <BrandingField label="RDO Code"  value={form.rdo} placeholder="044" onChange={v => set("rdo", v)} />
+        <BrandingField label="ZIP Code"  value={form.zip} placeholder="1550" onChange={v => set("zip", v)} />
         <div>
           <label className="field-label">Brand Colour *</label>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
